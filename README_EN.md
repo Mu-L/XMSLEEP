@@ -91,8 +91,8 @@ Built with Material Design 3 guidelines, the app features a clean and beautiful 
 
 ## 📦 Current Version
 
-- **Version**: 2.0.6
-- **Version Code**: 26
+- **Version**: 2.0.7
+- **Version Code**: 27
 - **Min SDK**: Android 8.0 (API 26)
 - **Target SDK**: Android 15 (API 35)
 
@@ -145,6 +145,12 @@ Latest version available on [GitHub Releases](https://github.com/Tosencen/XMSLEE
 9. **Long Press Drag to Stop**: Long press floating button to drag, drag to bottom red area to stop all playback
 
 ## 📝 Changelog
+
+### v2.0.7 (2025-11-17)
+- 🎛 **Preset Optimization**: Improved preset module visibility logic for clearer behavior when clearing or switching presets
+- 🧩 **Preset Tabs**: Preset 1/2/3 tabs now support horizontal scrolling, long labels are no longer truncated
+- ▶️ **Floating Play**: Global floating button now auto-collapses when the bottom preset panel is expanded
+- 🎬 **Card Animation**: Playing items in the expanded floating list now slide out to the left with a unified removal animation
 
 ### v2.0.6 (2025-11-14)
 - 🎨 **UI**: Comprehensive floating button optimization (animation, shadow, layout)
