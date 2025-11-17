@@ -48,12 +48,12 @@ import kotlin.math.roundToInt
  * 
  * 功能特性：
  * - 固定在屏幕左侧中央
- * - 默认收起状态（只显示箭头图标 40dp）
- * - 点击箭头展开播放列表（280dp）
+ * - 默认收起状态（20dp 窄条，无箭头，有呼吸动画）
+ * - 点击展开播放列表（280dp）
+ * - 展开高度固定最多显示 3 个音频项，支持滚动
  * - 显示正在播放的音频及音量控制
  * - 支持单个停止和全部停止
- * - 滑动页面自动收起
- * - 数量角标、颜色指示、微动画
+ * - 滑动页面或切换 tab 自动收起
  * 
  * @param audioManager 音频管理器
  * @param onSoundClick 点击音频回调
@@ -85,7 +85,9 @@ fun FloatingPlayButtonNew(
     audioManager: AudioManager,
     onSoundClick: (SoundMetadata) -> Unit = {},
     selectedTab: Int? = null,
-    shouldCollapse: Boolean = false
+    shouldCollapse: Boolean = false,
+    activePreset: Int = 1, // 当前激活的预设
+    onAddToPreset: (localSounds: List<AudioManager.Sound>, remoteSoundIds: List<String>) -> Unit = { _, _ -> } // 添加到预设的回调
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -98,9 +100,6 @@ fun FloatingPlayButtonNew(
     // 按钮状态
     var isExpanded by remember { mutableStateOf(false) }
     var showStopAllDialog by remember { mutableStateOf(false) }
-    
-    // 长按状态
-    var isLongPressing by remember { mutableStateOf(false) }
     
     // 加载远程音频列表
     val resourceManager = remember { 
@@ -166,33 +165,27 @@ fun FloatingPlayButtonNew(
     }
     
     // 尺寸配置
-    val collapsedWidth = 40.dp      // 收起时的宽度（只显示箭头）
-    val expandedWidth = 280.dp       // 展开时的宽度
+    val collapsedWidth = 20.dp      // 收起时的宽度（窄条，无箭头）
+    val expandedWidth = 230.dp       // 展开时的宽度
     val buttonHeight = 80.dp         // 最小高度
-    val maxHeight = 400.dp           // 最大高度
+    
+    // 动态高度计算
+    val minHeight = 240.dp           // 最小高度（单个音频时）
+    val maxHeight = 460.dp           // 最大高度（多个音频时）
+    val itemHeight = 88.dp           // 每个音频项的高度
+    val headerHeight = 48.dp         // 标题栏高度
+    val itemSpacing = 8.dp           // 音频项之间的间距
     
     // 根据播放数量计算高度
-    val itemHeight = 80.dp           // 每个音频项的高度（足够显示名称、按钮和音量滑块）
-    val headerHeight = 48.dp         // 标题栏高度
-    val minContentHeight = 168.dp    // 单个音频时的最小高度（舒适空间）
+    val calculatedHeight = headerHeight + 4.dp + (itemHeight * playingCount.coerceAtMost(10)) + (itemSpacing * (playingCount - 1).coerceAtLeast(0))
+    val contentHeight = calculatedHeight.coerceIn(minHeight, maxHeight)
     
-    val calculatedHeight = if (playingCount == 1) {
-        // 单个音频时使用更大的高度
-        minContentHeight
-    } else {
-        // 多个音频时按实际数量计算（最多10个）
-        headerHeight + (itemHeight * playingCount.coerceAtMost(10))
-    }
-    // 增加最大高度限制以容纳更多音频
-    val adjustedMaxHeight = (screenHeight * 0.8f).coerceAtMost(700.dp)
-    val contentHeight = calculatedHeight.coerceAtMost(adjustedMaxHeight)
-    
-    // 动画值（减慢50%：降低刚度）
+    // 动画值（使用平滑过渡，避免过度反弹）
     val width by animateDpAsState(
         targetValue = if (isExpanded) expandedWidth else collapsedWidth,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "width"
     )
@@ -200,8 +193,8 @@ fun FloatingPlayButtonNew(
     val height by animateDpAsState(
         targetValue = if (isExpanded) contentHeight else buttonHeight,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "height"
     )
@@ -234,21 +227,8 @@ fun FloatingPlayButtonNew(
     }
     
     // 使用 Material3 规范的颜色系统
-    val buttonContainerColor by animateColorAsState(
-        targetValue = if (isLongPressing) {
-            MaterialTheme.colorScheme.error
-        } else {
-            MaterialTheme.colorScheme.primaryContainer
-        },
-        animationSpec = tween(200),
-        label = "buttonContainerColor"
-    )
-    
-    val buttonContentColor = if (isLongPressing) {
-        MaterialTheme.colorScheme.onError
-    } else {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    }
+    val buttonContainerColor = MaterialTheme.colorScheme.primaryContainer
+    val buttonContentColor = MaterialTheme.colorScheme.onPrimaryContainer
     
     // 展开模块背景色与箭头相同，但深色模式下稍微浅一点
     val expandedContainerColor = if (isDarkTheme) {
@@ -311,6 +291,7 @@ fun FloatingPlayButtonNew(
                         audioManager = audioManager,
                         onCollapse = { isExpanded = false },
                         onStopAll = { showStopAllDialog = true },
+                        onAddToPreset = onAddToPreset,
                         contentColor = expandedContentColor,
                         containerColor = expandedContainerColor
                     )
@@ -371,40 +352,16 @@ fun FloatingPlayButtonNew(
                             bottomEnd = 20.dp
                         )
                     )
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            isExpanded = true
-                        },
-                        onLongPress = {
-                            // 长按触发全部停止
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            isLongPressing = true
-                            scope.launch {
-                                delay(800) // 显示提示
-                                if (isLongPressing) {
-                                    showStopAllDialog = true
-                                    isLongPressing = false
-                                }
-                            }
-                        },
-                        onPress = {
-                            val pressed = tryAwaitRelease()
-                            if (!pressed) {
-                                isLongPressing = false
-                            }
-                        }
-                    )
-                }
-            ) {
-                // 收起状态：只显示箭头和角标
-                CollapsedArrowButton(
-                    playingCount = playingCount,
-                    arrowRotation = arrowRotation,
-                    isLongPressing = isLongPressing,
-                    contentColor = buttonContentColor
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        isExpanded = true
+                    }
                 )
+            ) {
+                // 收起状态：空的窄条，只有呼吸动画
             }
         }
     }
@@ -437,50 +394,6 @@ fun FloatingPlayButtonNew(
 }
 
 /**
- * 收起状态的箭头按钮
- * 只显示箭头图标和数量角标
- */
-@Composable
-private fun CollapsedArrowButton(
-    playingCount: Int,
-    arrowRotation: Float,
-    isLongPressing: Boolean,
-    contentColor: Color
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        // 箭头图标（不再应用呼吸动画）
-        Box(
-            modifier = Modifier.scale(if (isLongPressing) 1.2f else 1.0f),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = stringResource(R.string.expand),
-                tint = contentColor,
-                modifier = Modifier.size(28.dp)
-            )
-            
-            // 移除数量角标（红色圆）
-        }
-        
-        // 长按提示
-        if (isLongPressing) {
-            Text(
-                text = stringResource(R.string.stop_all),
-                color = Color.White,
-                fontSize = 10.sp,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = 20.dp)
-            )
-        }
-    }
-}
-
-/**
  * 展开状态的播放列表
  * 显示所有正在播放的音频及控制项
  */
@@ -490,64 +403,139 @@ private fun ExpandedPlayingList(
     audioManager: AudioManager,
     onCollapse: () -> Unit,
     onStopAll: () -> Unit,
+    onAddToPreset: (localSounds: List<AudioManager.Sound>, remoteSoundIds: List<String>) -> Unit,
     contentColor: Color,
     containerColor: Color // 展开容器的背景色
 ) {
+    val context = LocalContext.current
+    val isDarkTheme = isSystemInDarkTheme()
     
-    Column(
+    // 计算按钮背景色：与声音卡片相同（containerColor 的 95% 深度）
+    val buttonBackgroundColor = containerColor.copy(
+        red = (containerColor.red * 0.95f).coerceAtLeast(0f),
+        green = (containerColor.green * 0.95f).coerceAtLeast(0f),
+        blue = (containerColor.blue * 0.95f).coerceAtLeast(0f)
+    )
+    
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .padding(12.dp)
     ) {
-        // 标题栏（不再显示收起按钮，因为箭头已经在外面了）
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { /* 拦截点击，防止穿透 */ }
-                ),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            // 标题
-            Text(
-                text = stringResource(R.string.playing_title, playingSounds.size),
-                color = contentColor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Start
-            )
-            
-            // 全部停止按钮（使用 Stop 图标而非 Delete）
-            IconButton(
-                onClick = onStopAll,
-                modifier = Modifier.size(36.dp)
+            // 标题栏（不再显示收起按钮，因为箭头已经在外面了）
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { /* 拦截点击，防止穿透 */ }
+                    ),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.stop_all),
-                    tint = contentColor
+                // 标题
+                Text(
+                    text = stringResource(R.string.playing_title, playingSounds.size),
+                    color = contentColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Start
                 )
+                
+                // 全部停止按钮（使用 Stop 图标而非 Delete）
+                IconButton(
+                    onClick = onStopAll,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.stop_all),
+                        tint = contentColor
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // 播放列表（可滚动）- 底部留出按钮空间（48dp + 8dp间距 = 56dp）
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
+                contentPadding = PaddingValues(bottom = 56.dp), // 为底部按钮留出空间
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(playingSounds, key = { it.id }) { item ->
+                    FloatingPlayItemView(
+                        item = item,
+                        audioManager = audioManager,
+                        contentColor = contentColor,
+                        containerColor = containerColor
+                    )
+                }
             }
         }
         
-        Spacer(modifier = Modifier.height(4.dp))
-        
-        // 播放列表（可滚动）
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        // "添加到预设"按钮（固定在底部）
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .align(Alignment.BottomCenter),
+            color = buttonBackgroundColor, // 使用与声音卡片相同的背景色
+            shape = RoundedCornerShape(8.dp),
+            shadowElevation = 0.dp // 无投影
         ) {
-            items(playingSounds, key = { it.id }) { item ->
-                FloatingPlayItemView(
-                    item = item,
-                    audioManager = audioManager,
-                    contentColor = contentColor,
-                    containerColor = containerColor
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable {
+                        // 分别收集本地声音和远程声音
+                        val localSounds = playingSounds.mapNotNull { item ->
+                            when (item) {
+                                is FloatingPlayItem.Local -> item.sound
+                                is FloatingPlayItem.Remote -> null
+                            }
+                        }
+                        val remoteSoundIds = playingSounds.mapNotNull { item ->
+                            when (item) {
+                                is FloatingPlayItem.Local -> null
+                                is FloatingPlayItem.Remote -> item.sound.id
+                            }
+                        }
+                        
+                        if (localSounds.isNotEmpty() || remoteSoundIds.isNotEmpty()) {
+                            onAddToPreset(localSounds, remoteSoundIds)
+                        } else {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.no_playing_sounds),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.add_to_preset),
+                    color = contentColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -656,30 +644,33 @@ private fun FloatingPlayItemView(
             )
             
             // 停止按钮
-            FilledTonalButton(
-                onClick = {
-                    when (item) {
-                        is FloatingPlayItem.Local -> audioManager.pauseSound(item.sound)
-                        is FloatingPlayItem.Remote -> audioManager.pauseRemoteSound(item.id)
-                    }
-                },
-                modifier = Modifier
-                    .size(28.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = containerColor,
-                    contentColor = if (isDarkTheme) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                ),
-                contentPadding = PaddingValues(0.dp)
+            Box(
+                modifier = Modifier.size(28.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Stop,
-                    contentDescription = stringResource(R.string.stop),
-                    modifier = Modifier.size(16.dp)
-                )
+                FilledTonalButton(
+                    onClick = {
+                        when (item) {
+                            is FloatingPlayItem.Local -> audioManager.pauseSound(item.sound)
+                            is FloatingPlayItem.Remote -> audioManager.pauseRemoteSound(item.id)
+                        }
+                    },
+                    modifier = Modifier.size(28.dp),
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = containerColor,
+                        contentColor = if (isDarkTheme) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    ),
+                    contentPadding = PaddingValues(0.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = stringResource(R.string.stop),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
         
@@ -688,8 +679,7 @@ private fun FloatingPlayItemView(
         // 音量滑块
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.VolumeUp,
@@ -697,6 +687,8 @@ private fun FloatingPlayItemView(
                 tint = contentColor.copy(alpha = 0.7f),
                 modifier = Modifier.size(16.dp)
             )
+            
+            Spacer(modifier = Modifier.width(4.dp))
             
             Slider(
                 value = currentVolume,
@@ -707,13 +699,15 @@ private fun FloatingPlayItemView(
                         is FloatingPlayItem.Remote -> audioManager.setRemoteVolume(item.id, newVolume)
                     }
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f), // 自适应宽度
                 colors = SliderDefaults.colors(
                     thumbColor = contentColor,
                     activeTrackColor = contentColor.copy(alpha = 0.8f),
                     inactiveTrackColor = contentColor.copy(alpha = 0.3f)
                 )
             )
+            
+            Spacer(modifier = Modifier.width(4.dp))
             
             Text(
                 text = "${(currentVolume * 100).roundToInt()}%",

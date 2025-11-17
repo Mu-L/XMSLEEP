@@ -161,4 +161,14 @@
     <string name="stop_all_confirm_message">確定要停止所有正在播放的音訊嗎？</string>
     <string name="stop">停止</string>
     <string name="volume">音量</string>
+    <string name="add_to_preset">添加到預設</string>
+    <string name="added_to_preset">已添加 %1$d 個聲音到預設 %2$d</string>
+    <string name="preset_full">預設 %1$d 已滿（最多10個）</string>
+    <string name="no_playing_sounds">當前沒有正在播放的聲音</string>
+    
+    <!-- 預設模組 -->
+    <string name="preset_1">預設 1</string>
+    <string name="preset_2">預設 2</string>
+    <string name="preset_3">預設 3</string>
+    <string name="preset_max_reached">當前預設已達到最多10個聲音</string>
 </resources>

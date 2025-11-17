@@ -16,6 +16,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -33,7 +35,7 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.CloudDownload
@@ -269,11 +271,23 @@ fun SoundsScreen(
     onDarkModeChange: (org.xmsleep.app.theme.DarkModeOption) -> Unit = {},
     columnsCount: Int = 2,
     onColumnsCountChange: (Int) -> Unit = {},
-    pinnedSounds: androidx.compose.runtime.MutableState<MutableSet<AudioManager.Sound>>,
+    preset1Sounds: androidx.compose.runtime.MutableState<MutableSet<AudioManager.Sound>>,
+    preset2Sounds: androidx.compose.runtime.MutableState<MutableSet<AudioManager.Sound>>,
+    preset3Sounds: androidx.compose.runtime.MutableState<MutableSet<AudioManager.Sound>>,
     favoriteSounds: androidx.compose.runtime.MutableState<MutableSet<AudioManager.Sound>>,
+    activePreset: Int = 1, // 当前激活的预设 (1, 2, 3)
+    onActivePresetChange: (Int) -> Unit = {}, // 切换预设的回调
+    hasAnyPresetItems: Boolean = false, // 所有预设中是否有卡片（用于判断预设模块是否显示）
     onNavigateToFavorite: () -> Unit = {},
     onScrollDetected: () -> Unit = {} // 滚动检测回调
 ) {
+    // 根据 activePreset 动态获取当前预设的 pinnedSounds
+    val pinnedSounds = when (activePreset) {
+        1 -> preset1Sounds
+        2 -> preset2Sounds
+        3 -> preset3Sounds
+        else -> preset1Sounds
+    }
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current
@@ -289,8 +303,15 @@ fun SoundsScreen(
     
     // 远程音频相关状态
     var remoteSounds by remember { mutableStateOf<List<org.xmsleep.app.audio.model.SoundMetadata>>(emptyList()) }
-    var remotePinned by remember { 
-        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getRemotePinned(context).toMutableSet()) 
+    var remotePinned by remember(activePreset) { 
+        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()) 
+    }
+    
+    // 监听 activePreset 变化，重新加载对应的远程音频固定状态
+    LaunchedEffect(activePreset) {
+        val newPinned = org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()
+        remotePinned = newPinned
+        android.util.Log.d("SoundsScreen", "切换到预设 $activePreset，远程固定音频数量: ${newPinned.size}")
     }
     var downloadingSounds by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var playingRemoteSounds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -323,7 +344,7 @@ fun SoundsScreen(
     LaunchedEffect(Unit) {
         while (true) {
             delay(500) // 每500ms检查一次
-            val savedPinned = org.xmsleep.app.preferences.PreferencesManager.getRemotePinned(context).toMutableSet()
+            val savedPinned = org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()
             // 比较内容是否相同（使用 toSet() 进行比较）
             if (savedPinned.toSet() != remotePinned.toSet()) {
                 remotePinned = savedPinned
@@ -569,10 +590,6 @@ fun SoundsScreen(
     // 默认区域编辑模式状态
     var isDefaultAreaEditMode by remember { mutableStateOf(false) }
     
-    // 批量选择模式状态（用于批量设置默认）
-    var isBatchSelectMode by remember { mutableStateOf(false) }
-    var selectedSoundsForBatch by remember { mutableStateOf(mutableSetOf<AudioManager.Sound>()) }
-    
     // 是否正在滚动
     val isScrolling = builtInScrollState.isScrollInProgress
     
@@ -645,7 +662,7 @@ fun SoundsScreen(
                 onClick = { onNavigateToFavorite() }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Bookmark,
+                    imageVector = Icons.Outlined.Bookmark,
                     contentDescription = context.getString(R.string.tab_favorite),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -662,22 +679,19 @@ fun SoundsScreen(
         
         // 内置页面内容（使用Box包装以支持FAB对齐和底部弹出区域）
         Box(modifier = Modifier.fillMaxSize()) {
-            // 实时获取默认卡片列表（用于判断是否显示默认区域）
-            val defaultItems = remember {
-                derivedStateOf {
-                    soundItems.filter { pinnedSounds.value.contains(it.sound) }
-                }
-            }.value
+            // 实时获取默认卡片列表（当前预设）
+            val defaultItems = remember(activePreset, pinnedSounds.value) {
+                soundItems.filter { pinnedSounds.value.contains(it.sound) }
+            }
             
-            // 实时获取远程音频置顶列表
-            val defaultRemoteSounds = remember(remoteSounds, remotePinned) {
+            // 实时获取远程音频置顶列表（当前预设）
+            val defaultRemoteSounds = remember(activePreset, remoteSounds, remotePinned) {
                 remoteSounds.filter { remotePinned.contains(it.id) }
             }
             
-            // 合并本地和远程音频置顶列表（用于判断是否显示默认区域）
-            val hasDefaultItems = remember(defaultItems, defaultRemoteSounds) {
-                defaultItems.isNotEmpty() || defaultRemoteSounds.isNotEmpty()
-            }
+            // 使用从外部传入的 hasAnyPresetItems 来判断是否显示预设模块
+            // 这样即使切换到空预设，只要其他预设有卡片，模块也不会消失
+            val hasDefaultItems = hasAnyPresetItems
             
             // 当默认区域没有内容时，自动退出编辑模式
             LaunchedEffect(defaultItems.isEmpty()) {
@@ -689,25 +703,6 @@ fun SoundsScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(isQuickPlayExpanded) {
-                        // 当快捷播放模块展开时，点击内容区域的空白处自动收缩
-                        if (isQuickPlayExpanded) {
-                            detectTapGestures { tapOffset ->
-                                // 点击内容区域时，收缩快捷播放模块
-                                // 注意：这里不检查点击位置是否在快捷播放模块内，
-                                // 因为快捷播放模块在上层，会优先接收点击事件
-                                // 如果点击到了这里，说明点击的是内容区域
-                                scope.launch {
-                                    // 如果当前是编辑模式，先退出编辑模式
-                                    if (isDefaultAreaEditMode) {
-                                        isDefaultAreaEditMode = false
-                                    }
-                                    isQuickPlayExpanded = false
-                                    org.xmsleep.app.preferences.PreferencesManager.saveQuickPlayExpanded(context, false)
-                                }
-                            }
-                        }
-                    }
             ) {
                 // 标题和布局切换按钮（独立一行）
                 Row(
@@ -717,183 +712,48 @@ fun SoundsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // 标题区域
                     Row(
                         modifier = Modifier.weight(1f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (isBatchSelectMode) {
-                            // 批量选择模式下显示关闭按钮和已选择数量
-                            IconButton(
-                                onClick = {
-                                    // 退出批量选择模式（不执行批量操作）
-                                    isBatchSelectMode = false
-                                    selectedSoundsForBatch.clear()
-                                }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = context.getString(R.string.cancel_batch_select),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f, fill = false)
-                            ) {
-                                Text(
-                                    text = context.getString(R.string.selected_count, selectedSoundsForBatch.size),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = context.getString(R.string.max_select_hint),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        } else {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                Text(
-                                    text = context.getString(R.string.white_noise_cards),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = context.getString(R.string.builtin_sounds_offline_hint),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                )
-                            }
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                text = context.getString(R.string.white_noise_cards),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = context.getString(R.string.builtin_sounds_offline_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                         }
                     }
+                    
+                    // 右侧按钮区域：只保留布局切换按钮
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                                // 图书钉图标 - 批量选择模式切换（只在非批量选择模式下显示）
-                                if (!isBatchSelectMode) {
-                                    IconButton(
-                                        onClick = { 
-                                            // 进入批量选择模式
-                                            isBatchSelectMode = true
-                                            // 初始化：已设为默认的声音自动选中
-                                            selectedSoundsForBatch = pinnedSounds.value.toMutableSet()
-                                            // 清除编辑模式
-                                            isDefaultAreaEditMode = false
-                                        }
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.PushPin,
-                                            contentDescription = context.getString(R.string.batch_select_default),
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-                                
-                                // 批量选择模式下的完成按钮
-                                if (isBatchSelectMode) {
-                                    Surface(
-                                        onClick = {
-                                            // 执行批量操作并退出
-                                            val currentSet = pinnedSounds.value.toMutableSet()
-                                            val allSounds = soundItems.map { it.sound }.toSet()
-                                            
-                                            // 先计算将要添加的数量
-                                            var addCount = 0
-                                            allSounds.forEach { sound ->
-                                                val isSelected = selectedSoundsForBatch.contains(sound)
-                                                val isCurrentlyPinned = currentSet.contains(sound)
-                                                if (isSelected && !isCurrentlyPinned) {
-                                                    addCount++
-                                                }
-                                            }
-                                            
-                                            // 检查是否超过最大数量（3个，包括本地和远程）
-                                            val totalPinned = currentSet.size + remotePinned.size
-                                            if (totalPinned + addCount > 3) {
-                                                android.widget.Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.max_3_sounds_limit),
-                                                    android.widget.Toast.LENGTH_SHORT
-                                                ).show()
-                                            } else {
-                                                // 遍历所有声音，根据选中状态更新默认列表
-                                                allSounds.forEach { sound ->
-                                                    val isSelected = selectedSoundsForBatch.contains(sound)
-                                                    val isCurrentlyPinned = currentSet.contains(sound)
-                                                    
-                                                    if (isSelected && !isCurrentlyPinned) {
-                                                        // 选中且不在默认列表中，添加到默认列表
-                                                        currentSet.add(sound)
-                                                    } else if (!isSelected && isCurrentlyPinned) {
-                                                        // 未选中但在默认列表中，从默认列表中移除
-                                                        currentSet.remove(sound)
-                                                    }
-                                                }
-                                                
-                                                pinnedSounds.value = currentSet
-                                                // 立即同步播放状态
-                                                currentSet.forEach { sound ->
-                                                    playingStates[sound] = audioManager.isPlayingSound(sound)
-                                                }
-                                                
-                                                android.widget.Toast.makeText(
-                                                    context,
-                                                    context.getString(R.string.default_area_updated),
-                                                    android.widget.Toast.LENGTH_SHORT
-                                                ).show()
-                                                
-                                                // 退出批量选择模式
-                                                isBatchSelectMode = false
-                                                selectedSoundsForBatch.clear()
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text(
-                                                text = context.getString(R.string.done),
-                                                style = MaterialTheme.typography.labelLarge,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                            Icon(
-                                                imageVector = Icons.Default.PushPin,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp),
-                                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                            )
-                                        }
-                                    }
-                                }
-                                
-                                // 布局切换按钮
-                                IconButton(
-                                    onClick = { 
-                                        // 点击布局切换按钮时退出编辑模式和批量选择模式
-                                        isDefaultAreaEditMode = false
-                                        if (isBatchSelectMode) {
-                                            isBatchSelectMode = false
-                                            selectedSoundsForBatch.clear()
-                                        }
-                                        val newCount = if (columnsCount == 2) 3 else 2
-                                        onColumnsCountChange(newCount)
-                                    }
-                                ) {
-                                    Icon(
-                                        // 3列时使用线性图标ViewAgenda，2列时使用填充图标GridView
-                                        imageVector = if (columnsCount == 2) Icons.Default.GridView else Icons.Outlined.ViewAgenda,
-                                        contentDescription = if (columnsCount == 2) context.getString(R.string.switch_to_3_columns) else context.getString(R.string.switch_to_2_columns),
-                                        tint = MaterialTheme.colorScheme.primary
-                        )
+                        // 布局切换按钮（2列/3列）
+                        IconButton(
+                            onClick = { 
+                                // 点击布局切换按钮时退出编辑模式
+                                isDefaultAreaEditMode = false
+                                val newCount = if (columnsCount == 2) 3 else 2
+                                onColumnsCountChange(newCount)
+                            }
+                        ) {
+                            Icon(
+                                // 3列时使用线性图标ViewAgenda，2列时使用填充图标GridView
+                                imageVector = if (columnsCount == 2) Icons.Default.GridView else Icons.Outlined.ViewAgenda,
+                                contentDescription = if (columnsCount == 2) context.getString(R.string.switch_to_3_columns) else context.getString(R.string.switch_to_2_columns),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                     }
                 }
             }
@@ -908,51 +768,23 @@ fun SoundsScreen(
                 columnsCount = columnsCount,
                 pinnedSounds = pinnedSounds,
                 favoriteSounds = favoriteSounds,
-                isBatchSelectMode = isBatchSelectMode,
-                selectedSoundsForBatch = selectedSoundsForBatch,
                 scrollState = builtInScrollState,
-                onSoundBatchSelect = { sound ->
-                    val newSet = selectedSoundsForBatch.toMutableSet()
-                    if (newSet.contains(sound)) {
-                        // 取消选择
-                        newSet.remove(sound)
-                        selectedSoundsForBatch = newSet
-                    } else {
-                        // 尝试选择新卡片（检查本地和远程总数）
-                        val totalPinned = pinnedSounds.value.size + remotePinned.size
-                        val totalSelected = newSet.size
-                        // 计算当前已选择但未置顶的数量
-                        val newSelectedCount = newSet.count { !pinnedSounds.value.contains(it) }
-                        // 检查总数是否超过3个（包括已置顶的本地和远程音频）
-                        if (totalPinned + newSelectedCount >= 3) {
-                            // 已经选择了3个，不允许再选择
-                            android.widget.Toast.makeText(
-                                context,
-                                context.getString(R.string.max_3_sounds_limit),
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            // 可以选择
-                            newSet.add(sound)
-                            selectedSoundsForBatch = newSet
-                        }
-                    }
-                },
                 onEditModeReset = { isDefaultAreaEditMode = false },
                 onPinnedChange = { sound, isPinned ->
+                    // 已在 onSoundPinChange 中处理，这里直接传递同样的逻辑
                     val currentSet = pinnedSounds.value.toMutableSet()
                     if (isPinned) {
-                        // 检查是否已达到最大数量（3个，包括本地和远程）
                         val totalPinned = currentSet.size + remotePinned.size
-                        if (totalPinned >= 3) {
+                        if (totalPinned >= 10) {
                             android.widget.Toast.makeText(
                                 context,
-                                context.getString(R.string.max_3_sounds_limit),
+                                context.getString(R.string.preset_max_reached),
                                 android.widget.Toast.LENGTH_SHORT
                             ).show()
                         } else {
                             currentSet.add(sound)
                             pinnedSounds.value = currentSet
+                            playingStates[sound] = audioManager.isPlayingSound(sound)
                         }
                     } else {
                         currentSet.remove(sound)
@@ -976,7 +808,7 @@ fun SoundsScreen(
         
         // 实时检测快捷播放的播放状态（包括本地和远程）
         var defaultAreaSoundsPlaying by remember { mutableStateOf(false) }
-        LaunchedEffect(pinnedSounds.value, defaultRemoteSounds, playingStates, playingRemoteSounds) {
+        LaunchedEffect(activePreset, pinnedSounds.value, defaultRemoteSounds, playingStates, playingRemoteSounds) {
             // 立即检查一次状态
             val localPlaying = pinnedSounds.value.any { audioManager.isPlayingSound(it) }
             val remotePlaying = defaultRemoteSounds.any { audioManager.isPlayingRemoteSound(it.id) }
@@ -995,15 +827,11 @@ fun SoundsScreen(
         }
         
         // 底部弹出区域的高度偏移动画（从底部滑入）
-        // Material Design 3 NavigationBar（有标签）标准高度是80dp
-        // Scaffold的bottomBar会在paddingValues中添加80dp的底部padding
-        // 由于SoundsScreen的modifier已经应用了paddingValues，Box的底部对齐到这个padding后的容器
-        // 所以需要向上偏移80dp来紧贴NavigationBar
         val bottomSheetOffsetY by animateDpAsState(
             targetValue = if (hasDefaultItems) {
-                0.dp // 不偏移，紧贴底部导航栏
+                0.dp // 有内容时显示在底部
             } else {
-                300.dp
+                300.dp // 没有内容时向下滑出屏幕
             },
             animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
             label = "bottomSheetOffsetY"
@@ -1012,7 +840,7 @@ fun SoundsScreen(
         // 底部弹出的快捷播放（悬浮在内容之上，位于底部导航栏上方）
         if (hasDefaultItems) {
             val density = LocalDensity.current
-            val dragThreshold = with(density) { 20.dp.toPx() } // 滑动阈值20dp（降低阈值，更容易触发）
+            val dragThreshold = with(density) { 20.dp.toPx() }
             
             Box(
                 modifier = Modifier
@@ -1023,45 +851,7 @@ fun SoundsScreen(
                         color = MaterialTheme.colorScheme.surfaceContainer,
                         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
                     )
-                    .pointerInput(isQuickPlayExpanded) {
-                        var totalDragY = 0f
-                        
-                        detectVerticalDragGestures(
-                            onDragStart = {
-                                // 滑动开始时重置累计距离
-                                totalDragY = 0f
-                            },
-                            onDragEnd = {
-                                // 滑动结束时，根据总滑动距离判断是否切换状态
-                                val finalDragY = totalDragY
-                                totalDragY = 0f
-                                
-                                if (abs(finalDragY) >= dragThreshold) {
-                                    // 向上滑（负值）表示收缩，向下滑（正值）表示展开
-                                    scope.launch {
-                                        // 在协程中实时获取当前状态
-                                        val currentExpanded = isQuickPlayExpanded
-                                        if (finalDragY < 0 && currentExpanded) {
-                                            // 向上滑动且当前展开，则收缩
-                                            // 如果当前是编辑模式，先退出编辑模式
-                                            if (isDefaultAreaEditMode) {
-                                                isDefaultAreaEditMode = false
-                                            }
-                                            isQuickPlayExpanded = false
-                                            org.xmsleep.app.preferences.PreferencesManager.saveQuickPlayExpanded(context, false)
-                                        } else if (finalDragY > 0 && !currentExpanded) {
-                                            // 向下滑动且当前收缩，则展开
-                                            isQuickPlayExpanded = true
-                                            org.xmsleep.app.preferences.PreferencesManager.saveQuickPlayExpanded(context, true)
-                                        }
-                                    }
-                                }
-                            }
-                        ) { change, dragAmount ->
-                            // 累计滑动距离（只累计垂直方向的滑动）
-                            totalDragY += dragAmount
-                        }
-                    }
+
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
@@ -1112,15 +902,17 @@ fun SoundsScreen(
                     defaultAreaHasSounds = defaultAreaHasSounds,
                     defaultAreaSoundsPlaying = defaultAreaSoundsPlaying,
                     isExpanded = isQuickPlayExpanded,
+                    activePreset = activePreset,
+                    onActivePresetChange = onActivePresetChange,
                     onPinnedChange = { sound, isPinned ->
                         val currentSet = pinnedSounds.value.toMutableSet()
                         if (isPinned) {
-                            // 检查是否已达到最大数量（3个，包括本地和远程）
+                            // 检查是否已达到最大数量（10个，包括本地和远程）
                             val totalPinned = currentSet.size + remotePinned.size
-                            if (totalPinned >= 3) {
+                            if (totalPinned >= 10) {
                                 android.widget.Toast.makeText(
                                     context,
-                                    context.getString(R.string.max_3_sounds_limit),
+                                    context.getString(R.string.preset_max_reached),
                                     android.widget.Toast.LENGTH_SHORT
                                 ).show()
                             } else {
@@ -1143,14 +935,6 @@ fun SoundsScreen(
                         }
                         favoriteSounds.value = currentSet
                     },
-                    onEnterBatchSelectMode = {
-                        // 进入批量选择模式
-                        isBatchSelectMode = true
-                        // 初始化：已设为默认的声音自动选中
-                        selectedSoundsForBatch = pinnedSounds.value.toMutableSet()
-                        // 清除编辑模式
-                        isDefaultAreaEditMode = false
-                    },
                     // 远程音频相关参数
                     remoteSounds = defaultRemoteSounds,
                     remotePinned = remotePinned,
@@ -1159,12 +943,12 @@ fun SoundsScreen(
                     onRemotePinnedChange = { soundId, isPinned ->
                         val newSet = remotePinned.toMutableSet()
                         if (isPinned) {
-                            // 检查是否已达到最大数量（3个，包括本地和远程）
+                            // 检查是否已达到最大数量（10个，包括本地和远程）
                             val totalPinned = pinnedSounds.value.size + newSet.size
-                            if (totalPinned >= 3) {
+                            if (totalPinned >= 10) {
                                 android.widget.Toast.makeText(
                                     context,
-                                    context.getString(R.string.max_3_sounds_limit),
+                                    context.getString(R.string.preset_max_reached),
                                     android.widget.Toast.LENGTH_SHORT
                                 ).show()
                             } else {
@@ -1174,7 +958,7 @@ fun SoundsScreen(
                             newSet.remove(soundId)
                         }
                         remotePinned = newSet
-                        org.xmsleep.app.preferences.PreferencesManager.saveRemotePinned(context, newSet)
+                        org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                     },
                     onRemoteCardClick = { sound ->
                         scope.launch {
@@ -1230,35 +1014,34 @@ fun SoundsScreen(
             }
         }
         
-        // 倒计时FAB（批量选择模式或滚动时滑出到边缘外）
+        // 倒计时FAB（滚动时滑出到边缘外）
         val timerFABOffsetX by animateDpAsState(
-            targetValue = if (!isBatchSelectMode && !isScrolling) 0.dp else 60.dp,
+            targetValue = if (!isScrolling) 0.dp else 60.dp,
             animationSpec = tween(durationMillis = 300),
             label = "timerFABOffsetX"
         )
         
-        // 倒计时按钮的底部padding动画（与快捷播放保持30dp间隔）
+        // 倒计时按钮的底部padding动画（与预设模块保持30dp间隔）
         // 顶部箭头栏：30dp（6dp padding + 24dp图标）
-        // 标题栏：约72dp
-        // 卡片区域（展开时）：约104dp
-        // 收缩状态高度：30dp + 72dp = 102dp
-        // 展开状态高度：30dp + 72dp + 104dp = 206dp
-        // 动画配置与快捷播放模块的AnimatedVisibility保持一致（300ms）
+        // Tab栏+按钮：约72dp
+        // 卡片区域：约104dp
         val arrowBarHeight = 30.dp // 顶部箭头栏高度
-        val titleBarHeight = 72.dp // 标题栏高度
-        val cardAreaHeight = 104.dp // 卡片区域高度
-        val quickPlayHeight = if (isQuickPlayExpanded) {
-            arrowBarHeight + titleBarHeight + cardAreaHeight // 展开状态
-        } else {
-            arrowBarHeight + titleBarHeight // 收缩状态（只有标题栏）
-        }
+        val contentHeight = 72.dp + 104.dp // Tab栏+按钮+卡片区域的总高度
+        
         val timerFABBottomPadding by animateDpAsState(
             targetValue = if (hasDefaultItems) {
-                quickPlayHeight + 30.dp // 快捷播放高度 + 30dp间隔（从FAB底部到快捷播放顶部）
+                if (isQuickPlayExpanded) {
+                    // 展开状态：箭头 + 内容 + 30dp间隔
+                    arrowBarHeight + contentHeight + 30.dp
+                } else {
+                    // 收缩状态：只有箭头 + 30dp间隔
+                    arrowBarHeight + 30.dp
+                }
             } else {
-                16.dp // 复位到原来的位置
+                // 没有预设内容时复位到底部
+                16.dp
             },
-            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+            animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
             label = "timerFABBottomPadding"
         )
         
@@ -1316,6 +1099,8 @@ private fun DefaultArea(
     defaultAreaHasSounds: Boolean,
     defaultAreaSoundsPlaying: Boolean,
     isExpanded: Boolean = true,
+    activePreset: Int = 1, // 当前激活的预设
+    onActivePresetChange: (Int) -> Unit = {}, // 切换预设的回调
     onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
     onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit,
     onEnterBatchSelectMode: () -> Unit = {},
@@ -1330,43 +1115,102 @@ private fun DefaultArea(
     scope: CoroutineScope = rememberCoroutineScope(),
     resourceManager: org.xmsleep.app.audio.AudioResourceManager = remember { org.xmsleep.app.audio.AudioResourceManager.getInstance(context) }
 ) {
-    // 实时获取默认卡片列表（使用derivedStateOf确保状态变化时触发重组）
-    val defaultItems = remember {
-        derivedStateOf {
-            soundItems.filter { pinnedSounds.value.contains(it.sound) }
-        }
-    }.value
+    // 实时获取默认卡片列表（依赖于 activePreset 和 pinnedSounds.value）
+    val defaultItems = remember(activePreset, pinnedSounds.value) {
+        soundItems.filter { pinnedSounds.value.contains(it.sound) }
+    }
     
     Column(modifier = Modifier
         .fillMaxWidth()
         // 移除底部padding，让内容紧贴底部导航栏
     ) {
-        // 标题和编辑按钮（一行）
-        Row(
+        // 用 AnimatedVisibility 包裹所有内容（除了箭头按钮），收缩时隐藏
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isExpanded,
+            enter = androidx.compose.animation.fadeIn(
+                animationSpec = tween(durationMillis = 150, easing = LinearEasing)
+            ) + androidx.compose.animation.expandVertically(
+                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+            ),
+            exit = androidx.compose.animation.fadeOut(
+                animationSpec = tween(durationMillis = 150, easing = LinearEasing)
+            ) + androidx.compose.animation.shrinkVertically(
+                animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+            )
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                // Tab 切换和编辑按钮（一行）
+                Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp), // 顶部增加间距
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // 左侧：预设 Tab 切换
             Row(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.Start,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                // 预设1
+                Surface(
+                    onClick = { onActivePresetChange(1) },
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (activePreset == 1) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.height(36.dp)
                 ) {
-                    Text(
-                        text = context.getString(R.string.default_playback_area),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = context.getString(R.string.click_play_button_to_play_all),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = context.getString(R.string.preset_1),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (activePreset == 1) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 1) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                // 预设2
+                Surface(
+                    onClick = { onActivePresetChange(2) },
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (activePreset == 2) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = context.getString(R.string.preset_2),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (activePreset == 2) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 2) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                // 预设3
+                Surface(
+                    onClick = { onActivePresetChange(3) },
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (activePreset == 3) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = context.getString(R.string.preset_3),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (activePreset == 3) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 3) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             
@@ -1503,52 +1347,33 @@ private fun DefaultArea(
             }
         }
         
-        // 默认区域容器（移除Surface，因为已经在外部Box中添加了背景）
-        // 使用 AnimatedVisibility 实现平滑的展开/收缩动画
-        androidx.compose.animation.AnimatedVisibility(
-            visible = isExpanded,
-            enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 0.dp)
-            ) {
-            // 限制最多显示3个卡片（本地+远程总共最多3个）
-            val maxLocalItems = minOf(defaultItems.size, 3)
-            val maxRemoteItems = minOf(remoteSounds.size, 3 - maxLocalItems)
+                // 默认区域容器（卡片区域）
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 0.dp)
+                ) {
+            // 限制最多显示10个卡片（本地+远程总共最多10个）
+            val maxLocalItems = minOf(defaultItems.size, 10)
+            val maxRemoteItems = minOf(remoteSounds.size, 10 - maxLocalItems)
             val displayedLocalItems = defaultItems.take(maxLocalItems)
             val displayedRemoteSounds = remoteSounds.take(maxRemoteItems)
             val allDefaultItems = displayedLocalItems.size + displayedRemoteSounds.size
             
-            if (allDefaultItems == 0) {
-                // 没有默认卡片时，显示占位区域
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    EmptyStateAnimation(size = 72.dp)
-                }
-            } else {
-                // 有默认卡片时，显示卡片（固定3列，只显示标题和声音图标）
-                // 计算需要显示的占位图数量（始终显示3个位置）
-                val placeholderCount = 3 - allDefaultItems
-                
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(12.dp),
+            // 横向滚动布局，不再显示占位方块
+            // 用户通过长按卡片来添加到预设
+            
+            LazyRow(
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // 显示本地音频卡片（最多3个）
+                    // 显示本地音频卡片（最多10个）
                     items(displayedLocalItems) { item ->
                         var showVolumeDialog by remember { mutableStateOf(false) }
                         
                         DefaultCard(
+                            modifier = Modifier.width(100.dp), // 横向滚动时固定卡片宽度
                             item = item,
                             isPlaying = playingStates[item.sound] ?: false,
                             isFavorite = favoriteSounds.value.contains(item.sound),
@@ -1633,8 +1458,9 @@ private fun DefaultArea(
                         }
                         
                         // 使用 MainActivity 中的 RemoteSoundCard，适配快捷播放模块的大小（80.dp）
-                        org.xmsleep.app.ui.starsky.RemoteSoundCard(
-                            sound = sound,
+                        Box(modifier = Modifier.width(100.dp)) { // 横向滚动时固定卡片宽度
+                            org.xmsleep.app.ui.starsky.RemoteSoundCard(
+                                sound = sound,
                             displayName = getSoundDisplayName(sound),
                             isPlaying = isPlaying,
                             downloadProgress = downloadProgress,
@@ -1655,21 +1481,15 @@ private fun DefaultArea(
                                 // 删除（取消置顶）
                                 onRemotePinnedChange(sound.id, false)
                             }
-                        )
-                    }
-                    
-                    // 显示占位图（填充剩余位置）
-                    if (placeholderCount > 0) {
-                        items(placeholderCount) {
-                            PlaceholderCard(
-                                onClick = onEnterBatchSelectMode
                             )
                         }
                     }
+                    
+                    // 不再显示占位方块，用户通过长按卡片来添加
+                }
                 }
             }
         }
-            }
     }
 }
 
@@ -1798,10 +1618,7 @@ private fun BuiltInSoundsContent(
     columnsCount: Int = 2,
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
     favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
-    isBatchSelectMode: Boolean = false,
-    selectedSoundsForBatch: MutableSet<AudioManager.Sound>,
     scrollState: LazyGridState,
-    onSoundBatchSelect: (AudioManager.Sound) -> Unit = {},
     onEditModeReset: () -> Unit,
     onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
     onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit
@@ -1832,29 +1649,21 @@ private fun BuiltInSoundsContent(
                         columnsCount = columnsCount,
                         isPinned = pinnedSounds.value.contains(item.sound),
                         isFavorite = favoriteSounds.value.contains(item.sound),
-                        isBatchSelectMode = isBatchSelectMode,
-                isSelected = selectedSoundsForBatch.contains(item.sound),
-                canSelect = selectedSoundsForBatch.size < 3 || selectedSoundsForBatch.contains(item.sound),
-                onToggle = { sound ->
-                            if (isBatchSelectMode) {
-                                // 批量选择模式下，切换选中状态
-                                onSoundBatchSelect(sound)
+                        onToggle = { sound ->
+                            // 点击卡片时退出编辑模式
+                            onEditModeReset()
+                            val wasPlaying = audioManager.isPlayingSound(sound)
+                            if (wasPlaying) {
+                                audioManager.pauseSound(sound)
+                                playingStates[sound] = false
                             } else {
-                                // 点击卡片时退出编辑模式
-                                onEditModeReset()
-                                val wasPlaying = audioManager.isPlayingSound(sound)
-                                if (wasPlaying) {
-                                    audioManager.pauseSound(sound)
-                                    playingStates[sound] = false
-                                } else {
-                                    // 先设置状态为true，表示正在启动播放
-                                    playingStates[sound] = true
-                                    audioManager.playSound(context, sound)
-                                    // 延迟一小段时间后同步实际状态，确保状态正确
-                                    scope.launch {
-                                        delay(200)
-                                        playingStates[sound] = audioManager.isPlayingSound(sound)
-                                    }
+                                // 先设置状态为true，表示正在启动播放
+                                playingStates[sound] = true
+                                audioManager.playSound(context, sound)
+                                // 延迟一小段时间后同步实际状态，确保状态正确
+                                scope.launch {
+                                    delay(200)
+                                    playingStates[sound] = audioManager.isPlayingSound(sound)
                                 }
                             }
                         },

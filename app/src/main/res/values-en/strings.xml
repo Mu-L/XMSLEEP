@@ -146,6 +146,16 @@
     <string name="stop">Stop</string>
     <string name="volume">Volume</string>
     <string name="drag_to_stop_play">Drag here to stop playback</string>
+    <string name="add_to_preset">Add to Preset</string>
+    <string name="added_to_preset">Added %1$d sounds to Preset %2$d</string>
+    <string name="preset_full">Preset %1$d is full (max 10)</string>
+    <string name="no_playing_sounds">No sounds currently playing</string>
+    
+    <!-- Preset Module -->
+    <string name="preset_1">Preset 1</string>
+    <string name="preset_2">Preset 2</string>
+    <string name="preset_3">Preset 3</string>
+    <string name="preset_max_reached">Current preset has reached maximum 10 sounds</string>
     
     <!-- Local Sound Names -->
     <string name="sound_umbrella_rain">Rain on Umbrella</string>

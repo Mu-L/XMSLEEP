@@ -171,21 +171,115 @@ fun MainScreen(
         }
     }
     
-    // 置顶和收藏状态管理（提升到MainScreen级别，确保切换tab时状态不丢失）
-    val pinnedSounds = remember { mutableStateOf(mutableSetOf<org.xmsleep.app.audio.AudioManager.Sound>()) }
+    // 当前激活的预设（1, 2, 3）
+    var activePreset by remember { 
+        mutableIntStateOf(org.xmsleep.app.preferences.PreferencesManager.getActivePreset(context))
+    }
+    
+    // 3个预设的固定声音列表
+    val preset1Sounds = remember { 
+        val saved = org.xmsleep.app.preferences.PreferencesManager.getPresetLocalPinned(context, 1)
+        mutableStateOf(saved.mapNotNull { name ->
+            try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(name) } catch (e: Exception) { null }
+        }.toMutableSet())
+    }
+    val preset2Sounds = remember { 
+        val saved = org.xmsleep.app.preferences.PreferencesManager.getPresetLocalPinned(context, 2)
+        mutableStateOf(saved.mapNotNull { name ->
+            try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(name) } catch (e: Exception) { null }
+        }.toMutableSet())
+    }
+    val preset3Sounds = remember { 
+        val saved = org.xmsleep.app.preferences.PreferencesManager.getPresetLocalPinned(context, 3)
+        mutableStateOf(saved.mapNotNull { name ->
+            try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(name) } catch (e: Exception) { null }
+        }.toMutableSet())
+    }
+    
+    // 获取当前激活预设的声音列表（根据 activePreset 动态切换）
+    val pinnedSounds = when (activePreset) {
+        1 -> preset1Sounds
+        2 -> preset2Sounds
+        3 -> preset3Sounds
+        else -> preset1Sounds
+    }
+    
+    // 保存当前预设的固定声音到 SharedPreferences
+    LaunchedEffect(preset1Sounds.value) {
+        org.xmsleep.app.preferences.PreferencesManager.savePresetLocalPinned(
+            context, 1, preset1Sounds.value.map { it.name }.toSet()
+        )
+    }
+    LaunchedEffect(preset2Sounds.value) {
+        org.xmsleep.app.preferences.PreferencesManager.savePresetLocalPinned(
+            context, 2, preset2Sounds.value.map { it.name }.toSet()
+        )
+    }
+    LaunchedEffect(preset3Sounds.value) {
+        org.xmsleep.app.preferences.PreferencesManager.savePresetLocalPinned(
+            context, 3, preset3Sounds.value.map { it.name }.toSet()
+        )
+    }
+    
+    // 保存当前激活的预设
+    LaunchedEffect(activePreset) {
+        org.xmsleep.app.preferences.PreferencesManager.saveActivePreset(context, activePreset)
+    }
+    
     val favoriteSounds = remember { mutableStateOf(mutableSetOf<org.xmsleep.app.audio.AudioManager.Sound>()) }
     
     // AudioManager实例（用于播放/暂停快捷播放的声音）
     val audioManager = remember { org.xmsleep.app.audio.AudioManager.getInstance() }
     
-    // 检查快捷播放是否有声音
-    val defaultAreaHasSounds = pinnedSounds.value.isNotEmpty()
+    // PreferencesManager实例（用于管理预设的远程声音）
+    val preferencesManager = remember { org.xmsleep.app.preferences.PreferencesManager }
+    
+    // 检查所有预设是否都为空（只有当所有3个预设都为空时才隐藏预设模块）
+    // 修复：同时检查本地音频预设和远程音频固定状态
+    var preset1RemotePinned by remember { mutableStateOf(preferencesManager.getPresetRemotePinned(context, 1)) }
+    var preset2RemotePinned by remember { mutableStateOf(preferencesManager.getPresetRemotePinned(context, 2)) }
+    var preset3RemotePinned by remember { mutableStateOf(preferencesManager.getPresetRemotePinned(context, 3)) }
+    val allRemotePinned = preset1RemotePinned + preset2RemotePinned + preset3RemotePinned
+    
+    val defaultAreaHasSounds = preset1Sounds.value.isNotEmpty() || 
+                                preset2Sounds.value.isNotEmpty() || 
+                                preset3Sounds.value.isNotEmpty() ||
+                                allRemotePinned.isNotEmpty()
+    
+    // 添加调试日志跟踪预设模块显示状态
+    LaunchedEffect(defaultAreaHasSounds) {
+        android.util.Log.d("MainScreen", "预设模块显示状态变化: $defaultAreaHasSounds, 本地预设1=${preset1Sounds.value.size}, 预设2=${preset2Sounds.value.size}, 预设3=${preset3Sounds.value.size}, 远程固定=${allRemotePinned.size}")
+    }
+    
+    // 实时监听所有预设的远程音频固定状态变化
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(200) // 提高检查频率到200ms
+            val newPreset1RemotePinned = preferencesManager.getPresetRemotePinned(context, 1)
+            val newPreset2RemotePinned = preferencesManager.getPresetRemotePinned(context, 2)
+            val newPreset3RemotePinned = preferencesManager.getPresetRemotePinned(context, 3)
+            val newAllRemotePinned = newPreset1RemotePinned + newPreset2RemotePinned + newPreset3RemotePinned
+            
+            if (newAllRemotePinned != allRemotePinned) {
+                android.util.Log.d("MainScreen", "所有预设远程音频固定状态变化: ${allRemotePinned.size} -> ${newAllRemotePinned.size}")
+                preset1RemotePinned = newPreset1RemotePinned
+                preset2RemotePinned = newPreset2RemotePinned
+                preset3RemotePinned = newPreset3RemotePinned
+            }
+        }
+    }
     
     // 实时检测快捷播放的播放状态（使用LaunchedEffect定期更新）
     var defaultAreaSoundsPlaying by remember { mutableStateOf(false) }
-    LaunchedEffect(pinnedSounds.value, Unit) {
+    LaunchedEffect(preset1Sounds.value, preset2Sounds.value, preset3Sounds.value, activePreset, Unit) {
         while (true) {
-            defaultAreaSoundsPlaying = pinnedSounds.value.any { audioManager.isPlayingSound(it) }
+            val currentPresetSounds = when (activePreset) {
+                1 -> preset1Sounds.value
+                2 -> preset2Sounds.value
+                3 -> preset3Sounds.value
+                else -> preset1Sounds.value
+            }
+            defaultAreaSoundsPlaying = currentPresetSounds.any { audioManager.isPlayingSound(it) }
             delay(300) // 每300ms检查一次
         }
     }
@@ -309,8 +403,13 @@ fun MainScreen(
                                 onDarkModeChange = onDarkModeChange,
                                 columnsCount = soundCardsColumnsCount,
                                 onColumnsCountChange = onSoundCardsColumnsCountChange,
-                                pinnedSounds = pinnedSounds,
+                                preset1Sounds = preset1Sounds,
+                                preset2Sounds = preset2Sounds,
+                                preset3Sounds = preset3Sounds,
                                 favoriteSounds = favoriteSounds,
+                                activePreset = activePreset,
+                                onActivePresetChange = { newPreset -> activePreset = newPreset },
+                                hasAnyPresetItems = defaultAreaHasSounds,
                                 onNavigateToFavorite = {
                                     navigator.navigateToFavorite()
                                 },
@@ -330,6 +429,7 @@ fun MainScreen(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .padding(paddingValues),
+                                activePreset = activePreset,
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
                                     shouldCollapseFloatingButton = true
@@ -435,7 +535,71 @@ fun MainScreen(
         org.xmsleep.app.ui.FloatingPlayButtonNew(
             audioManager = audioManager,
             selectedTab = selectedItem, // 传递当前选中的 tab
-            shouldCollapse = shouldCollapseFloatingButton // 传递收缩标志
+            shouldCollapse = shouldCollapseFloatingButton, // 传递收缩标志
+            activePreset = activePreset,
+            onAddToPreset = { localSounds, remoteSoundIds ->
+                // 获取当前预设的 MutableState
+                val currentPresetSounds = when (activePreset) {
+                    1 -> preset1Sounds
+                    2 -> preset2Sounds
+                    3 -> preset3Sounds
+                    else -> preset1Sounds
+                }
+                
+                // 获取当前预设已有的本地和远程声音数量
+                val currentLocalSize = currentPresetSounds.value.size
+                // 修复：使用预设特定的远程音频置顶存储
+                val currentRemotePinned = preferencesManager.getPresetRemotePinned(context, activePreset)
+                val currentRemoteSize = currentRemotePinned.size
+                val currentTotalSize = currentLocalSize + currentRemoteSize
+                val maxSize = 10
+                
+                // 计算可以添加多少个
+                val canAddCount = (maxSize - currentTotalSize).coerceAtLeast(0)
+                
+                if (canAddCount == 0) {
+                    // 预设已满
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.preset_full, activePreset),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    // 合并本地和远程声音，按顺序添加（最多添加 canAddCount 个）
+                    val totalSoundsToAdd = localSounds.size + remoteSoundIds.size
+                    val actualAddCount = minOf(canAddCount, totalSoundsToAdd)
+                    
+                    var remainingSlots = actualAddCount
+                    var addedCount = 0
+                    
+                    // 先添加本地声音
+                    if (remainingSlots > 0 && localSounds.isNotEmpty()) {
+                        val localToAdd = localSounds.take(remainingSlots)
+                        val newLocalSet = currentPresetSounds.value.toMutableSet()
+                        newLocalSet.addAll(localToAdd)
+                        currentPresetSounds.value = newLocalSet
+                        addedCount += localToAdd.size
+                        remainingSlots -= localToAdd.size
+                    }
+                    
+                    // 再添加远程声音
+                    if (remainingSlots > 0 && remoteSoundIds.isNotEmpty()) {
+                        val remoteToAdd = remoteSoundIds.take(remainingSlots)
+                        // 修复：使用预设特定的远程音频置顶存储
+                        val newRemoteSet = currentRemotePinned.toMutableSet()
+                        newRemoteSet.addAll(remoteToAdd)
+                        preferencesManager.savePresetRemotePinned(context, activePreset, newRemoteSet)
+                        addedCount += remoteToAdd.size
+                    }
+                    
+                    // 显示成功提示
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.added_to_preset, addedCount, activePreset),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         )
         }
     }

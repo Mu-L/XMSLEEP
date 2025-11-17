@@ -1061,35 +1061,43 @@ class AudioManager private constructor() {
                 val loopStartMs = metadata.loopStart
                 val loopEndMs = if (metadata.loopEnd > 0) metadata.loopEnd else 0
                 
-                // 计算优化的循环起始点：提前1秒，但不小于0
-                val optimizedLoopStartMs = maxOf(0, loopStartMs - 1000)
-                
-                // 如果 loopEnd 为 0，使用 C.TIME_END_OF_SOURCE 让 ExoPlayer 自动检测文件长度
-                val endPositionUs = if (loopEndMs > 0) {
-                    loopEndMs * 1000
+                // 如果 loopStart 和 loopEnd 都为 0，说明是完整播放整个音频，不需要 ClippingMediaSource
+                val finalMediaSource = if (loopStartMs == 0L && loopEndMs == 0L) {
+                    // 完整播放，直接使用原始 MediaSource，避免 ClippingMediaSource 导致的循环问题
+                    Log.d(TAG, "$soundId 使用完整音频循环")
+                    mediaSource
                 } else {
-                    C.TIME_END_OF_SOURCE
+                    // 计算优化的循环起始点：提前1秒，但不小于0
+                    val optimizedLoopStartMs = maxOf(0, loopStartMs - 1000)
+                    
+                    // 如果 loopEnd 为 0，使用 C.TIME_END_OF_SOURCE 让 ExoPlayer 自动检测文件长度
+                    val endPositionUs = if (loopEndMs > 0) {
+                        loopEndMs * 1000
+                    } else {
+                        C.TIME_END_OF_SOURCE
+                    }
+                    
+                    // 为远程音频创建优化的媒体源
+                    val clippingMediaSource = if (uri.scheme == "file" && uri.path?.contains("/cache/") == true) {
+                        // 缓存文件：使用提前循环优化
+                        ClippingMediaSource.Builder(mediaSource)
+                            .setStartPositionUs(optimizedLoopStartMs * 1000)
+                            .setEndPositionUs(endPositionUs)
+                            .build()
+                    } else {
+                        // 网络文件：使用原始循环点，避免预加载过多数据
+                        ClippingMediaSource.Builder(mediaSource)
+                            .setStartPositionUs(loopStartMs * 1000)
+                            .setEndPositionUs(endPositionUs)
+                            .build()
+                    }
+                    
+                    Log.d(TAG, "$soundId 循环优化: 原始起始 ${loopStartMs}ms -> 优化起始 ${optimizedLoopStartMs}ms，结束 ${loopEndMs}ms")
+                    clippingMediaSource
                 }
-                
-                // 为远程音频创建优化的媒体源
-                val clippingMediaSource = if (uri.scheme == "file" && uri.path?.contains("/cache/") == true) {
-                    // 缓存文件：使用提前循环优化
-                    ClippingMediaSource.Builder(mediaSource)
-                        .setStartPositionUs(optimizedLoopStartMs * 1000)
-                        .setEndPositionUs(endPositionUs)
-                        .build()
-                } else {
-                    // 网络文件：使用原始循环点，避免预加载过多数据
-                    ClippingMediaSource.Builder(mediaSource)
-                        .setStartPositionUs(loopStartMs * 1000)
-                        .setEndPositionUs(endPositionUs)
-                        .build()
-                }
-                
-                Log.d(TAG, "$soundId 循环优化: 原始起始 ${loopStartMs}ms -> 优化起始 ${optimizedLoopStartMs}ms，结束 ${loopEndMs}ms")
                 
                 // 针对网络音频的优化设置
-                player.setMediaSource(clippingMediaSource)
+                player.setMediaSource(finalMediaSource)
                 player.repeatMode = Player.REPEAT_MODE_ONE
                 player.volume = remoteVolumeSettings[soundId] ?: DEFAULT_VOLUME
                 

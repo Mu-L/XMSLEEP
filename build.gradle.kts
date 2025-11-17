@@ -9,6 +9,6 @@ plugins {
 
 allprojects {
     group = "org.xmsleep"
-    version = "2.0.5"
+    version = "2.0.7"
 }
 

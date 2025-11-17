@@ -26,6 +26,17 @@ object PreferencesManager {
     private const val KEY_FLOATING_BUTTON_IS_LEFT = "floating_button_is_left"
     private const val KEY_FLOATING_BUTTON_EXPANDED = "floating_button_expanded"
     
+    // 3个预设的本地声音固定列表
+    private const val KEY_PRESET1_LOCAL_PINNED = "preset1_local_pinned"
+    private const val KEY_PRESET2_LOCAL_PINNED = "preset2_local_pinned"
+    private const val KEY_PRESET3_LOCAL_PINNED = "preset3_local_pinned"
+    // 3个预设的远程声音固定列表
+    private const val KEY_PRESET1_REMOTE_PINNED = "preset1_remote_pinned"
+    private const val KEY_PRESET2_REMOTE_PINNED = "preset2_remote_pinned"
+    private const val KEY_PRESET3_REMOTE_PINNED = "preset3_remote_pinned"
+    // 当前激活的预设
+    private const val KEY_ACTIVE_PRESET = "active_preset"
+    
     /**
      * 从旧版本迁移数据（如果存在）
      */
@@ -320,6 +331,85 @@ object PreferencesManager {
     fun getFloatingButtonExpanded(context: Context, default: Boolean = false): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_FLOATING_BUTTON_EXPANDED, default)
+    }
+    
+    /**
+     * 保存预设的本地声音固定列表
+     * @param presetIndex 预设索引 (1, 2, 3)
+     * @param soundNames 声音名称集合
+     */
+    fun savePresetLocalPinned(context: Context, presetIndex: Int, soundNames: Set<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = when (presetIndex) {
+            1 -> KEY_PRESET1_LOCAL_PINNED
+            2 -> KEY_PRESET2_LOCAL_PINNED
+            3 -> KEY_PRESET3_LOCAL_PINNED
+            else -> return
+        }
+        prefs.edit().putStringSet(key, soundNames).apply()
+    }
+    
+    /**
+     * 获取预设的本地声音固定列表
+     * @param presetIndex 预设索引 (1, 2, 3)
+     */
+    fun getPresetLocalPinned(context: Context, presetIndex: Int): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = when (presetIndex) {
+            1 -> KEY_PRESET1_LOCAL_PINNED
+            2 -> KEY_PRESET2_LOCAL_PINNED
+            3 -> KEY_PRESET3_LOCAL_PINNED
+            else -> return emptySet()
+        }
+        return prefs.getStringSet(key, emptySet()) ?: emptySet()
+    }
+    
+    /**
+     * 保存预设的远程声音固定列表
+     * @param presetIndex 预设索引 (1, 2, 3)
+     * @param soundIds 声音ID集合
+     */
+    fun savePresetRemotePinned(context: Context, presetIndex: Int, soundIds: Set<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = when (presetIndex) {
+            1 -> KEY_PRESET1_REMOTE_PINNED
+            2 -> KEY_PRESET2_REMOTE_PINNED
+            3 -> KEY_PRESET3_REMOTE_PINNED
+            else -> return
+        }
+        prefs.edit().putStringSet(key, soundIds).apply()
+    }
+    
+    /**
+     * 获取预设的远程声音固定列表
+     * @param presetIndex 预设索引 (1, 2, 3)
+     */
+    fun getPresetRemotePinned(context: Context, presetIndex: Int): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val key = when (presetIndex) {
+            1 -> KEY_PRESET1_REMOTE_PINNED
+            2 -> KEY_PRESET2_REMOTE_PINNED
+            3 -> KEY_PRESET3_REMOTE_PINNED
+            else -> return emptySet()
+        }
+        return prefs.getStringSet(key, emptySet()) ?: emptySet()
+    }
+    
+    /**
+     * 保存当前激活的预设
+     * @param presetIndex 预设索引 (1, 2, 3)
+     */
+    fun saveActivePreset(context: Context, presetIndex: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_ACTIVE_PRESET, presetIndex).apply()
+    }
+    
+    /**
+     * 获取当前激活的预设
+     */
+    fun getActivePreset(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_ACTIVE_PRESET, 1) // 默认为预设1
     }
 }
 

@@ -38,6 +38,7 @@ import org.xmsleep.app.ui.components.pagerTabIndicatorOffset
 @Composable
 fun StarSkyScreen(
     modifier: Modifier = Modifier,
+    activePreset: Int = 1, // 当前激活的预设
     onScrollDetected: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -82,8 +83,15 @@ fun StarSkyScreen(
     var remoteFavorites by remember { 
         mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context).toMutableSet()) 
     }
-    var remotePinned by remember { 
-        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getRemotePinned(context).toMutableSet()) 
+    var remotePinned by remember(activePreset) { 
+        mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()) 
+    }
+    
+    // 监听 activePreset 变化，重新加载对应的远程音频固定状态
+    LaunchedEffect(activePreset) {
+        val newPinned = org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()
+        remotePinned = newPinned
+        android.util.Log.d("StarSkyScreen", "切换到预设 $activePreset，远程固定音频数量: ${newPinned.size}")
     }
     
     
@@ -490,13 +498,14 @@ fun StarSkyScreen(
                                     } else {
                                         newSet.add(sound.id)
                                         remotePinned = newSet
-                                        org.xmsleep.app.preferences.PreferencesManager.saveRemotePinned(context, newSet)
+                                        android.util.Log.d("StarSkyScreen", "保存到预设 $activePreset: ${sound.id}")
+                                        org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                                     }
                                 }
                             } else {
                                 newSet.remove(sound.id)
                                 remotePinned = newSet
-                                org.xmsleep.app.preferences.PreferencesManager.saveRemotePinned(context, newSet)
+                                org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                             }
                         },
                         onFavoriteChange = { isFavorite ->
@@ -651,13 +660,15 @@ fun StarSkyScreen(
                                         } else {
                                             newSet.add(sound.id)
                                             remotePinned = newSet
-                                            org.xmsleep.app.preferences.PreferencesManager.saveRemotePinned(context, newSet)
+                                            android.util.Log.d("StarSkyScreen", "保存到预设 $activePreset: ${sound.id}")
+                                            android.util.Log.d("StarSkyScreen", "添加到第二个固定位置")
+                                            org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                                         }
                                     }
                                 } else {
                                     newSet.remove(sound.id)
                                     remotePinned = newSet
-                                    org.xmsleep.app.preferences.PreferencesManager.saveRemotePinned(context, newSet)
+                                    org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
                                 }
                             },
                             onFavoriteChange = { isFavorite ->

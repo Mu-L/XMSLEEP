@@ -161,4 +161,14 @@
     <string name="stop_all_confirm_message">确定要停止所有正在播放的音频吗？</string>
     <string name="stop">停止</string>
     <string name="volume">音量</string>
+    <string name="add_to_preset">添加到预设</string>
+    <string name="added_to_preset">已添加 %1$d 个声音到预设 %2$d</string>
+    <string name="preset_full">预设 %1$d 已满（最多10个）</string>
+    <string name="no_playing_sounds">当前没有正在播放的声音</string>
+    
+    <!-- 预设模块 -->
+    <string name="preset_1">预设 1</string>
+    <string name="preset_2">预设 2</string>
+    <string name="preset_3">预设 3</string>
+    <string name="preset_max_reached">当前预设已达到最多10个声音</string>
 </resources>
