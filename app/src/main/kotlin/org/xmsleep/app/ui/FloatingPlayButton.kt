@@ -50,7 +50,7 @@ import kotlin.math.roundToInt
  * - 固定在屏幕左侧中央
  * - 默认收起状态（20dp 窄条，无箭头，有呼吸动画）
  * - 点击展开播放列表（280dp）
- * - 展开高度固定最多显示 3 个音频项，支持滚动
+ * - 展开时显示所有正在播放的音频，支持滚动
  * - 显示正在播放的音频及音量控制
  * - 支持单个停止和全部停止
  * - 滑动页面或切换 tab 自动收起
@@ -564,6 +564,11 @@ private fun ExpandedPlayingList(
                         
                         if (localSounds.isNotEmpty() || remoteSoundIds.isNotEmpty()) {
                             onAddToPreset(localSounds, remoteSoundIds)
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(R.string.added_to_preset, localSounds.size + remoteSoundIds.size, 1),
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             android.widget.Toast.makeText(
                                 context,

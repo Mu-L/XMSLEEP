@@ -36,11 +36,27 @@
     <string name="app_description_title">应用说明</string>
     <string name="app_description">XMSLEEP 是一款专业的白噪音和自然声音播放应用，致力于为您提供高质量的音频体验。应用内置多种精选的自然声音，包括雨声、雷声、篝火声、鸟鸣声等，帮助您放松心情、提高专注力、改善睡眠质量。\n\n应用采用 Material Design 3 设计规范，界面简洁美观，操作流畅直观。支持多语言切换、主题自定义、音量独立调节、固定声音区域、收藏功能等丰富特性，让您享受个性化的声音体验。</string>
     <string name="usage_instructions_title">使用说明</string>
-    <string name="usage_instructions">• 点击声音卡片开始播放，再次点击停止\n• 点击音量图标可以单独调节每个声音的音量\n• 点击标题可以设置固定声音区域或收藏声音\n• 点击图书钉图标可以批量选择声音添加到固定声音区域\n• 使用倒计时功能可以设置自动停止播放的时间\n• 在设置中可以调整主题、隐藏动画、切换布局等</string>
+    <string name="usage_instructions">• 点击声音卡片开始播放，再次点击停止
+• 点击音量图标可以单独调节每个声音的音量
+• 点击标题可以设置固定声音区域或收藏声音
+• 点击图书钉图标可以批量选择声音添加到固定声音区域
+• 使用倒计时功能可以设置自动停止播放的时间
+• 在设置中可以调整主题、隐藏动画、切换布局等</string>
     <string name="sound_usage_title">声音使用说明</string>
-    <string name="sound_usage">• 内置声音：无需联网，可直接播放使用\n• 网络声音：首次使用需要下载，下载完成后可离线播放\n• 固定声音区域：最多可添加3个声音，支持本地和网络声音混合使用\n• 收藏功能：可以将喜欢的声音添加到收藏列表，方便快速访问\n• 音量调节：每个声音可独立调节音量，支持0-100%精确控制\n• 倒计时功能：可设置播放时长，时间到后自动停止所有声音</string>
+    <string name="sound_usage">• 内置声音：无需联网，可直接播放使用
+• 网络声音：首次使用需要下载，下载完成后可离线播放
+• 固定声音区域：最多可添加3个声音，支持本地和网络声音混合使用
+• 收藏功能：可以将喜欢的声音添加到收藏列表，方便快速访问
+• 音量调节：每个声音可独立调节音量，支持0-100%精确控制
+• 倒计时功能：可设置播放时长，时间到后自动停止所有声音</string>
     <string name="sound_source_title">声音来源说明</string>
-    <string name="sound_source">本应用提供的所有音频内容均来自公开可用的音频资源库，包括但不限于：\n\n• 内置声音：应用内置的声音文件来自开源音频资源库，经过精心筛选和优化，确保音质清晰、适合长时间播放。\n\n• 网络声音：应用通过网络加载的声音资源来自 moodist 项目（https://github.com/remvze/moodist），这是一个开源的氛围声音项目，所有资源均遵循 MIT 开源许可协议。\n\n• 版权声明：本应用仅提供音频播放功能，不拥有任何音频内容的版权。所有音频内容仅供个人学习和娱乐使用，请勿用于商业用途。如您发现任何音频内容侵犯了您的版权，请联系我们，我们将及时处理。</string>
+    <string name="sound_source">本应用提供的所有音频内容均来自公开可用的音频资源库，包括但不限于：
+
+• 内置声音：应用内置的声音文件来自开源音频资源库，经过精心筛选和优化，确保音质清晰、适合长时间播放。
+
+• 网络声音：应用通过网络加载的声音资源来自 moodist 项目（https://github.com/remvze/moodist），这是一个开源的氛围声音项目，所有资源均遵循 MIT 开源许可协议。
+
+• 版权声明：本应用仅提供音频播放功能，不拥有任何音频内容的版权。所有音频内容仅供个人学习和娱乐使用，请勿用于商业用途。如您发现任何音频内容侵犯了您的版权，请联系我们，我们将及时处理。</string>
     <string name="technical_info_title">技术信息</string>
     <string name="copyright">© 2025 XMSLEEP. All rights reserved.\n\n本应用提供的音频内容仅供个人学习和娱乐使用。\n请尊重相关音频资源的版权，不得用于商业用途。</string>
     <string name="hide_animation">隐藏WebP动画</string>
@@ -135,6 +151,7 @@
     <string name="update_now">立即更新</string>
     <string name="later">稍后</string>
     <string name="check_update_failed">检查更新失败</string>
+    <string name="check_update_failed_hint">可能是网络问题或 API 限制，请稍后重试</string>
     <string name="retry">重试</string>
     <string name="downloading_update">下载更新</string>
     <string name="downloaded_percent">已下载 %1$d%%</string>
@@ -142,6 +159,7 @@
     <string name="download_complete_message">更新包已下载完成，是否立即安装？</string>
     <string name="install_now">立即安装</string>
     <string name="download_failed">下载失败</string>
+    <string name="download_failed_hint">可能是网络问题，请检查网络后重试</string>
     <string name="installing">正在安装</string>
     <string name="starting_installer">正在启动安装程序…</string>
     <string name="install_failed">安装失败</string>
@@ -150,7 +168,15 @@
     <string name="load_failed">加载失败: %1$s</string>
     <string name="all_categories">全部</string>
     <string name="privacy_policy_title">隐私政策</string>
-    <string name="privacy_policy">本应用非常重视您的隐私保护。\n\n• 数据收集：本应用不会收集任何个人身份信息，也不会追踪用户活动。\n\n• 权限说明：本应用仅请求必要的音频播放权限，不会访问您的联系人、位置等敏感信息。\n\n• 数据安全：我们采用行业标准的安全措施保护您的数据，包括数据加密和访问控制。\n\n如有任何疑问，请通过应用内联系方式与我们联系。</string>
+    <string name="privacy_policy">本应用非常重视您的隐私保护。
+
+• 数据收集：本应用不会收集任何个人身份信息，也不会追踪用户活动。
+
+• 权限说明：本应用仅请求必要的音频播放权限，不会访问您的联系人、位置等敏感信息。
+
+• 数据安全：我们采用行业标准的安全措施保护您的数据，包括数据加密和访问控制。
+
+如有任何疑问，请通过应用内联系方式与我们联系。</string>
     <string name="wish_good_sleep">～愿你有个好梦～</string>
     
     <!-- 浮动播放按钮 -->

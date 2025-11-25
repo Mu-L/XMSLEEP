@@ -229,13 +229,57 @@ fun MainScreen(
         org.xmsleep.app.preferences.PreferencesManager.saveActivePreset(context, activePreset)
     }
     
-    val favoriteSounds = remember { mutableStateOf(mutableSetOf<org.xmsleep.app.audio.AudioManager.Sound>()) }
+    // 初始化收藏声音，从SharedPreferences读取保存的数据
+    val favoriteSounds = remember { 
+        mutableStateOf(
+            org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
+                .mapNotNull { soundName ->
+                    try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
+                }.toMutableSet()
+        )
+    }
+    
+    // 在应用退出前保存收藏数据
+    DisposableEffect(Unit) {
+        onDispose {
+            org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
+                context,
+                favoriteSounds.value.map { it.name }.toSet()
+            )
+        }
+    }
+    
+    // 监听收藏声音的变化，保存到SharedPreferences
+    LaunchedEffect(favoriteSounds.value) {
+        // 注意：这里直接使用 RemoteFavorites 存储是为了兼容远程音频的存储方式
+        // 实际应该有单独的本地收藏存储，但当前系统混用了远程和本地
+        org.xmsleep.app.preferences.PreferencesManager.saveRemoteFavorites(
+            context, 
+            favoriteSounds.value.map { it.name }.toSet()
+        )
+    }
     
     // AudioManager实例（用于播放/暂停快捷播放的声音）
     val audioManager = remember { org.xmsleep.app.audio.AudioManager.getInstance() }
     
     // PreferencesManager实例（用于管理预设的远程声音）
     val preferencesManager = remember { org.xmsleep.app.preferences.PreferencesManager }
+    
+    // 应用启动时检查 SharedPreferences 中的收藏数据，确保数据一致
+    DisposableEffect(Unit) {
+        val savedFavorites = org.xmsleep.app.preferences.PreferencesManager.getRemoteFavorites(context)
+            .mapNotNull { soundName ->
+                try { org.xmsleep.app.audio.AudioManager.Sound.valueOf(soundName) } catch (e: Exception) { null }
+            }.toMutableSet()
+        
+        // 如果读取到的数据与当前数据不一致，说明应用被关闭后重新打开，需要同步
+        if (savedFavorites.isNotEmpty() && favoriteSounds.value.isEmpty()) {
+            favoriteSounds.value = savedFavorites
+            android.util.Log.d("MainScreen", "从SharedPreferences恢复收藏数据: ${savedFavorites.size}个")
+        }
+        
+        onDispose { /* 不需要清理 */ }
+    }
     
     // 检查所有预设是否都为空（只有当所有3个预设都为空时才隐藏预设模块）
     // 修复：同时检查本地音频预设和远程音频固定状态

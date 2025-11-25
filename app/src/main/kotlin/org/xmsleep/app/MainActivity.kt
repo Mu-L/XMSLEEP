@@ -46,6 +46,9 @@ class MainActivity : ComponentActivity() {
         // 在应用启动时迁移旧版本的数据（如果存在）
         org.xmsleep.app.preferences.PreferencesManager.migrateFromOldVersion(this)
         
+        // 初始化默认的音频清单（从 assets 加载到缓存）
+        org.xmsleep.app.audio.AudioResourceManager.getInstance(this).initializeDefaultManifest()
+        
         // 检查是否有崩溃信息
         val (errorMessage, stackTrace) = intent.getCrashInfo()
         

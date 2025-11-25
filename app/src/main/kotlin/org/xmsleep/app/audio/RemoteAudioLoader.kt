@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.xmsleep.app.audio.model.AudioSource
 import org.xmsleep.app.audio.model.SoundsManifest
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,10 @@ class RemoteAudioLoader(private val context: Context) {
         // 使用jsDelivr CDN，国内可访问，无需VPN
         private const val REMOTE_MANIFEST_URL = 
             "https://cdn.jsdelivr.net/gh/Tosencen/XMSLEEP@main/sounds_remote.json"
+        
+        // 备用 URL - GitHub raw（如果 CDN 失败）
+        private const val BACKUP_MANIFEST_URL =
+            "https://raw.githubusercontent.com/Tosencen/XMSLEEP/main/sounds_remote.json"
         
         // GitHub raw URL模式（用于URL转换）
         private const val GITHUB_RAW_PATTERN = 
@@ -76,14 +81,28 @@ class RemoteAudioLoader(private val context: Context) {
     )
     
     /**
+     * 修复清单中不完整的音频数据
+     * 为缺少的填幅默认值，不影响存在的数据
+     */
+    private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
+        val fixedSounds = manifest.sounds.map { sound ->
+            // 为缺少的字段提供默认值
+            sound.copy(
+                source = sound.source ?: (if (sound.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL),
+                loopStart = sound.loopStart ?: 0L,
+                loopEnd = sound.loopEnd ?: 0L
+            )
+        }
+        return manifest.copy(sounds = fixedSounds)
+    }
+    
+    /**
      * 转换清单中所有音频文件的URL
-     * 注意：这里只转换URL，实际下载时会智能选择使用哪个URL
      */
     private fun convertManifestUrls(manifest: SoundsManifest): SoundsManifest {
         val convertedSounds = manifest.sounds.map { sound ->
             if (sound.remoteUrl != null) {
                 val convertedUrl = convertToJsDelivrUrl(sound.remoteUrl)
-                // 保存转换后的URL（优先使用jsDelivr）
                 sound.copy(remoteUrl = convertedUrl)
             } else {
                 sound
@@ -101,54 +120,86 @@ class RemoteAudioLoader(private val context: Context) {
     }
     
     /**
-     * 加载网络音频清单（带重试机制）
+     * 加载网络音频清单（带重试机制和备用URL）
      */
     suspend fun loadManifest(forceRefresh: Boolean = false): SoundsManifest {
         return withContext(Dispatchers.IO) {
             var lastException: Exception? = null
+            val urls = listOf(REMOTE_MANIFEST_URL, BACKUP_MANIFEST_URL)
             
-            for (attempt in 1..MAX_RETRY_COUNT) {
-                try {
-                    val request = Request.Builder()
-                        .url(REMOTE_MANIFEST_URL)
-                        .apply {
-                            if (forceRefresh) {
-                                addHeader("Cache-Control", "no-cache")
+            for (url in urls) {
+                Log.d(TAG, "开始会载网络音频清单，URL: $url")
+                
+                for (attempt in 1..MAX_RETRY_COUNT) {
+                    try {
+                        val request = Request.Builder()
+                            .url(url)
+                            .addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36")
+                            .addHeader("Accept", "application/json, text/plain, */*")
+                            .addHeader("Accept-Language", "en-US,en;q=0.9")
+                            .addHeader("Referer", "https://github.com/")
+                            .apply {
+                                if (forceRefresh) {
+                                    addHeader("Cache-Control", "no-cache")
+                                    addHeader("Pragma", "no-cache")
+                                }
                             }
+                            .build()
+                        
+                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 正在请求 $url...")
+                        val response = okHttpClient.newCall(request).execute()
+                        
+                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 收到响应，状态码 ${response.code}")
+                        
+                        if (!response.isSuccessful) {
+                            throw IOException("加载清单失败: HTTP ${response.code}")
                         }
-                        .build()
-                    
-                    val response = okHttpClient.newCall(request).execute()
-                    
-                    if (!response.isSuccessful) {
-                        throw IOException("加载清单失败: HTTP ${response.code}")
-                    }
-                    
-                    val json = response.body?.string() 
-                        ?: throw IOException("响应体为空")
-                    
-                    val manifest = gson.fromJson(json, SoundsManifest::class.java)
-                    
-                    // 转换所有音频文件的URL为jsDelivr CDN
-                    val convertedManifest = convertManifestUrls(manifest)
-                    
-                    Log.d(TAG, "成功加载网络音频清单，共 ${convertedManifest.sounds.size} 个音频 (尝试 $attempt/$MAX_RETRY_COUNT)")
-                    return@withContext convertedManifest
-                } catch (e: Exception) {
-                    lastException = e
-                    Log.w(TAG, "加载网络音频清单失败 (尝试 $attempt/$MAX_RETRY_COUNT): ${e.message}")
-                    
-                    // 如果不是最后一次尝试，等待后重试
-                    if (attempt < MAX_RETRY_COUNT) {
-                        val retryDelay = INITIAL_RETRY_DELAY * attempt // 递增延迟
-                        delay(retryDelay)
-                        Log.d(TAG, "等待 ${retryDelay}ms 后重试...")
+                        
+                        val json = response.body?.string() 
+                            ?: throw IOException("响应体为空")
+                        
+                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 收到 JSON，长度: ${json.length} 字符")
+                        
+                        try {
+                            val manifest = gson.fromJson(json, SoundsManifest::class.java)
+                            
+                            Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: JSON 解析成功，包含 ${manifest.sounds.size} 个音频，${manifest.categories.size} 个分类")
+                            
+                            if (manifest.sounds.isEmpty()) {
+                                Log.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
+                            }
+                            
+                            // 一主二为：需业修复不完整的音频数据，然后转换 URL
+                            val fixedManifest = fixManifestData(manifest)
+                            val convertedManifest = convertManifestUrls(fixedManifest)
+                            
+                            Log.d(TAG, "成功加载网络音频清单，共 ${convertedManifest.sounds.size} 个音频 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url)")
+                            return@withContext convertedManifest
+                        } catch (jsonError: Exception) {
+                            Log.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
+                            Log.e(TAG, "JSON 内容预览 (前500个字符): ${json.take(500)}")
+                            throw jsonError
+                        }
+                    } catch (e: Exception) {
+                        lastException = e
+                        Log.w(TAG, "加载失败 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url): ${e.javaClass.simpleName} - ${e.message}")
+                        e.printStackTrace()
+                        
+                        // 如果不是最后一次尝试，等待后重试
+                        if (attempt < MAX_RETRY_COUNT) {
+                            val retryDelay = INITIAL_RETRY_DELAY * attempt // 递增延迟
+                            delay(retryDelay)
+                            Log.d(TAG, "等待 ${retryDelay}ms 后重试...")
+                        }
                     }
                 }
+                
+                // 当前URL所有重试都失败，尝试下一个URL
+                Log.w(TAG, "URL 加载失败: $url，尝试备用 URL...")
             }
             
-            // 所有重试都失败
-            Log.e(TAG, "加载网络音频清单失败，已重试 $MAX_RETRY_COUNT 次: ${lastException?.message}")
+            // 所有URL都失败
+            Log.e(TAG, "加载网络音频清单失败，所有重试都广頙: ${lastException?.message}")
             throw lastException ?: IOException("加载清单失败")
         }
     }

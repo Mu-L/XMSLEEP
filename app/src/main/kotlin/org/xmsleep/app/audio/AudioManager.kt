@@ -1058,8 +1058,8 @@ class AudioManager private constructor() {
                 }
                 
                 // 远程音频循环优化：提前1秒开始循环，减少衔接间隙
-                val loopStartMs = metadata.loopStart
-                val loopEndMs = if (metadata.loopEnd > 0) metadata.loopEnd else 0
+                val loopStartMs = metadata.loopStart ?: 0L
+                val loopEndMs = metadata.loopEnd ?: 0L
                 
                 // 如果 loopStart 和 loopEnd 都为 0，说明是完整播放整个音频，不需要 ClippingMediaSource
                 val finalMediaSource = if (loopStartMs == 0L && loopEndMs == 0L) {

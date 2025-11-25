@@ -2,6 +2,7 @@ package org.xmsleep.app.ui.starsky
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.ViewAgenda
@@ -26,6 +29,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.xmsleep.app.R
@@ -87,6 +91,16 @@ fun StarSkyScreen(
         mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()) 
     }
     
+    // 调试模式：记录加载日志
+    var debugLogs by remember { mutableStateOf<List<String>>(emptyList()) }
+    var showDebugPanel by remember { mutableStateOf(false) }
+    
+    // 添加调试日志的辅助函数
+    val addDebugLog: (String) -> Unit = { message ->
+        val timestamp = java.text.SimpleDateFormat("HH:mm:ss.SSS").format(java.util.Date())
+        debugLogs = debugLogs + "[$timestamp] $message"
+    }
+    
     // 监听 activePreset 变化，重新加载对应的远程音频固定状态
     LaunchedEffect(activePreset) {
         val newPinned = org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()
@@ -110,24 +124,29 @@ fun StarSkyScreen(
     LaunchedEffect(Unit) {
         // 如果已经有数据（从缓存初始化），不重新加载（避免切换tab时重复加载）
         if (remoteSounds.isNotEmpty() && remoteCategories.isNotEmpty()) {
+            addDebugLog("✓ 已有缓存数据，跳过加载，直接后台刷新")
             android.util.Log.d("StarSkyScreen", "已有缓存数据，跳过加载，直接后台刷新")
             // 有缓存数据，延迟刷新（避免频繁请求），只在后台静默更新
             delay(5000) // 延迟5秒后刷新，避免频繁请求
             try {
+                addDebugLog("→ 开始后台刷新...")
                 val refreshedManifest = resourceManager.refreshRemoteManifest().getOrNull()
                 if (refreshedManifest != null) {
                     remoteSounds = refreshedManifest.sounds
                     remoteCategories = refreshedManifest.categories
+                    addDebugLog("✓ 后台刷新成功，分类数: ${refreshedManifest.categories.size}，音频数: ${refreshedManifest.sounds.size}")
                     android.util.Log.d("StarSkyScreen", "后台刷新清单成功，分类数量: ${refreshedManifest.categories.size}")
                 }
             } catch (e: Exception) {
                 // 后台刷新失败不影响显示
+                addDebugLog("✗ 后台刷新失败: ${e.message}")
                 android.util.Log.e("StarSkyScreen", "后台刷新音频清单失败: ${e.message}")
             }
             return@LaunchedEffect
         }
         
         // 没有缓存数据，需要加载
+        addDebugLog("→ 开始加载音频清单...")
         errorMessage = null
         
         // 第一步：先尝试从缓存加载（同步，快速），立即显示（不显示加载状态）
@@ -135,45 +154,77 @@ fun StarSkyScreen(
         if (cachedManifest != null) {
             remoteSounds = cachedManifest.sounds
             remoteCategories = cachedManifest.categories
+            addDebugLog("✓ 从本地缓存加载，分类数: ${cachedManifest.categories.size}，音频数: ${cachedManifest.sounds.size}")
             android.util.Log.d("StarSkyScreen", "从缓存加载清单，分类数量: ${cachedManifest.categories.size}")
             isLoading = false // 有缓存数据，不显示加载状态
         } else {
             // 完全没有缓存，显示加载状态
+            addDebugLog("ℹ 没有本地缓存，显示加载状态...")
             isLoading = true
         }
         
         // 第二步：后台刷新网络数据（不阻塞UI）
         if (remoteSounds.isEmpty()) {
             // 没有数据，立即刷新
+            addDebugLog("→ 开始从网络加载...")
             try {
                 val refreshedManifest = resourceManager.refreshRemoteManifest().getOrNull()
                 if (refreshedManifest != null) {
                     remoteSounds = refreshedManifest.sounds
                     remoteCategories = refreshedManifest.categories
+                    addDebugLog("✓ 网络加载成功，分类数: ${refreshedManifest.categories.size}，音频数: ${refreshedManifest.sounds.size}")
                     android.util.Log.d("StarSkyScreen", "成功刷新清单，分类数量: ${refreshedManifest.categories.size}")
+                } else {
+                    // 刷新返回 null，说明可能有网络问题但不是异常
+                    addDebugLog("⚠ 网络返回 null，尝试默认数据...")
+                    android.util.Log.w("StarSkyScreen", "刷新清单返回null，尝试使用默认数据")
+                    val defaultSounds = resourceManager.getRemoteSounds()
+                    if (defaultSounds.isNotEmpty()) {
+                        remoteSounds = defaultSounds
+                        addDebugLog("✓ 使用默认数据，音频数: ${defaultSounds.size}")
+                        android.util.Log.d("StarSkyScreen", "使用默认远程音频数据，数量: ${defaultSounds.size}")
+                    }
                 }
             } catch (e: Exception) {
-                // 刷新失败不影响显示，只记录错误
-                if (remoteSounds.isEmpty()) {
-                    // 只有在完全没有数据时才显示错误
-                    errorMessage = e.message
+                // 刷新失败，尝试使用默认数据
+                addDebugLog("✗ 网络加载失败: ${e.javaClass.simpleName}: ${e.message}")
+                android.util.Log.e("StarSkyScreen", "刷新音频清单异常: ${e.message}")
+                try {
+                    addDebugLog("→ 尝试使用默认数据...")
+                    val defaultSounds = resourceManager.getRemoteSounds()
+                    if (defaultSounds.isNotEmpty()) {
+                        remoteSounds = defaultSounds
+                        addDebugLog("✓ 使用默认数据，音频数: ${defaultSounds.size}")
+                        android.util.Log.d("StarSkyScreen", "异常后使用默认远程音频数据，数量: ${defaultSounds.size}")
+                    } else if (remoteSounds.isEmpty()) {
+                        // 既没有缓存也没有默认数据，才显示错误
+                        addDebugLog("✗ 加载完全失败！")
+                        errorMessage = e.message
+                    }
+                } catch (ex: Exception) {
+                    if (remoteSounds.isEmpty()) {
+                        addDebugLog("✗ 加载完全失败: ${ex.message}")
+                        errorMessage = ex.message
+                    }
                 }
-                android.util.Log.e("StarSkyScreen", "刷新音频清单失败: ${e.message}")
             } finally {
                 isLoading = false
             }
         } else {
             // 有数据，延迟刷新（避免频繁请求），只在后台静默更新
+            addDebugLog("→ 5秒后后台刷新...")
             delay(5000) // 延迟5秒后刷新，避免频繁请求
             try {
                 val refreshedManifest = resourceManager.refreshRemoteManifest().getOrNull()
                 if (refreshedManifest != null) {
                     remoteSounds = refreshedManifest.sounds
                     remoteCategories = refreshedManifest.categories
+                    addDebugLog("✓ 后台刷新成功")
                     android.util.Log.d("StarSkyScreen", "后台刷新清单成功，分类数量: ${refreshedManifest.categories.size}")
                 }
             } catch (e: Exception) {
                 // 后台刷新失败不影响显示
+                addDebugLog("⚠ 后台刷新失败（不影响显示）: ${e.message}")
                 android.util.Log.e("StarSkyScreen", "后台刷新音频清单失败: ${e.message}")
             }
         }
@@ -263,7 +314,8 @@ fun StarSkyScreen(
             Text(
                 text = context.getString(R.string.star_sky),
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { showDebugPanel = !showDebugPanel }
             )
             
             // 布局切换按钮
@@ -285,6 +337,52 @@ fun StarSkyScreen(
             }
         }
         
+        // 调试面板
+        if (showDebugPanel) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = "📋 加载日志（点击标题隐藏）",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 150.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        debugLogs.takeLast(10).forEach { log ->
+                            Text(
+                                text = log,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = when {
+                                    log.contains("✓") -> MaterialTheme.colorScheme.primary
+                                    log.contains("✗") -> MaterialTheme.colorScheme.error
+                                    log.contains("⚠") -> MaterialTheme.colorScheme.secondary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
         // 加载状态
         if (isLoading) {
             Box(
@@ -293,7 +391,11 @@ fun StarSkyScreen(
                     .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(16.dp))
+                    Text("正在加载...", style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
         // 错误状态
@@ -309,7 +411,7 @@ fun StarSkyScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = context.getString(R.string.load_failed, errorMessage ?: ""),
+                        text = "加载失败: $errorMessage",
                         color = MaterialTheme.colorScheme.error
                     )
                     Button(

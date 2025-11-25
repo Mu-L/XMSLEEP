@@ -217,19 +217,32 @@ fun UpdateDialog(
                 onDismissRequest = onDismiss,
                 title = { Text(context.getString(R.string.check_update_failed)) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Icon(
                             Icons.Default.ErrorOutline,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(48.dp)
                         )
-                        Text(state.error)
+                        Text(
+                            state.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            context.getString(R.string.check_update_failed_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 confirmButton = {
                     TextButton(
                         onClick = {
+                            updateViewModel.reset()
                             updateViewModel.checkUpdate(currentVersion)
                         }
                     ) {
@@ -345,14 +358,26 @@ fun UpdateDialog(
                 onDismissRequest = onDismiss,
                 title = { Text(context.getString(R.string.download_failed)) },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                         Icon(
                             Icons.Default.ErrorOutline,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(48.dp)
                         )
-                        Text(state.error)
+                        Text(
+                            state.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            context.getString(R.string.download_failed_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 confirmButton = {

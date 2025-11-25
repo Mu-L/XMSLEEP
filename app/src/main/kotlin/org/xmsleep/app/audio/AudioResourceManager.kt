@@ -10,6 +10,7 @@ import org.xmsleep.app.audio.model.AudioSource
 import org.xmsleep.app.audio.model.SoundMetadata
 import org.xmsleep.app.audio.model.SoundsManifest
 import java.io.File
+import java.io.IOException
 
 /**
  * 音频资源管理器
@@ -46,6 +47,24 @@ class AudioResourceManager private constructor(context: Context) {
     }
     
     /**
+     * 初始化时操作：不存在持久化缓存時，从 assets 加载默认数据
+     */
+    fun initializeDefaultManifest() {
+        try {
+            // 如果持久化缓存不存在，从 assets 文件加载默认数据
+            if (!manifestCacheFile.exists()) {
+                appContext.assets.open("sounds_remote.json").use { inputStream ->
+                    val json = inputStream.bufferedReader().use { it.readText() }
+                    manifestCacheFile.writeText(json)
+                    Log.d(TAG, "从 assets 中加载默认清单")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "初始化默认清单失败: ${e.message}")
+        }
+    }
+    
+    /**
      * 获取当前缓存的清单（同步，快速）
      * 优先返回内存缓存，如果没有则返回持久化缓存
      */
@@ -76,8 +95,9 @@ class AudioResourceManager private constructor(context: Context) {
                 savePersistedManifest(manifest)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "加载网络音频清单失败: ${e.message}")
-            null
+            Log.e(TAG, "加载网络音频清单失败: ${e.javaClass.simpleName} - ${e.message}")
+            // 当网络失败时，返回持久化缓存作为备选
+            loadPersistedManifest()
         }
     }
     
@@ -98,27 +118,37 @@ class AudioResourceManager private constructor(context: Context) {
     
     /**
      * 获取音频文件URI（用于播放）
-     * 优先使用缓存文件，如果缓存不存在则返回网络URL
+     * 优先使用缓存文件，如果缓存不存在则返回网络 URL
      */
     suspend fun getSoundUri(metadata: SoundMetadata): Uri? {
-        return when (metadata.source) {
+        // 如果 source 为 null，先修复
+        val fixedMetadata = if (metadata.source == null) {
+            metadata.copy(
+                source = if (metadata.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL
+            )
+        } else {
+            metadata
+        }
+            
+        return when (fixedMetadata.source) {
             AudioSource.LOCAL -> {
-                metadata.localResourceId?.let { resourceId ->
+                fixedMetadata.localResourceId?.let { resourceId ->
                     Uri.parse("android.resource://${appContext.packageName}/$resourceId")
                 }
             }
             AudioSource.REMOTE -> {
-                // 优先检查缓存，确保使用本地文件而不是网络URL
-                val cachedFile = cacheManager.getCachedFile(metadata.id)
+                // 优先检查缓存，确保使用本地文件而不是网络 URL
+                val cachedFile = cacheManager.getCachedFile(fixedMetadata.id)
                 if (cachedFile != null && cachedFile.exists() && cachedFile.length() > 0) {
-                    Log.d(TAG, "使用缓存文件播放: ${metadata.id} -> ${cachedFile.absolutePath}")
+                    Log.d(TAG, "使用缓存文件播放: ${fixedMetadata.id} -> ${cachedFile.absolutePath}")
                     Uri.fromFile(cachedFile)
                 } else {
-                    // 如果未缓存，返回网络URL（ExoPlayer支持流式播放）
-                    Log.d(TAG, "使用网络URL播放: ${metadata.id} -> ${metadata.remoteUrl}")
-                    metadata.remoteUrl?.let { Uri.parse(it) }
+                    // 如果未缓存，返回网络 URL（ExoPlayer支持流式播放）
+                    Log.d(TAG, "使用网络 URL 播放: ${fixedMetadata.id} -> ${fixedMetadata.remoteUrl}")
+                    fixedMetadata.remoteUrl?.let { Uri.parse(it) }
                 }
             }
+            null -> null
         }
     }
     
@@ -154,8 +184,10 @@ class AudioResourceManager private constructor(context: Context) {
             remoteManifest = manifest
             // 保存到持久化缓存
             savePersistedManifest(manifest)
+            Log.d(TAG, "刷新网络音频清单成功")
             Result.success(manifest)
         } catch (e: Exception) {
+            Log.e(TAG, "刷新失败: ${e.message}")
             Result.failure(e)
         }
     }
@@ -168,10 +200,12 @@ class AudioResourceManager private constructor(context: Context) {
             if (manifestCacheFile.exists() && manifestCacheFile.length() > 0) {
                 val json = manifestCacheFile.readText()
                 val manifest = gson.fromJson(json, SoundsManifest::class.java)
+                // 修复不完整的数据（与 RemoteAudioLoader 保持一致）
+                val fixedManifest = fixManifestData(manifest)
                 // 同时更新内存缓存
-                remoteManifest = manifest
-                Log.d(TAG, "从持久化缓存加载清单成功，共 ${manifest.sounds.size} 个音频")
-                manifest
+                remoteManifest = fixedManifest
+                Log.d(TAG, "从持久化缓存加载清单成功，共 ${fixedManifest.sounds.size} 个音频")
+                fixedManifest
             } else {
                 null
             }
@@ -179,6 +213,20 @@ class AudioResourceManager private constructor(context: Context) {
             Log.e(TAG, "从持久化缓存加载清单失败: ${e.message}")
             null
         }
+    }
+    
+    /**
+     * 修复清单中不完整的音频数据
+     */
+    private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
+        val fixedSounds = manifest.sounds.map { sound ->
+            sound.copy(
+                source = sound.source ?: (if (sound.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL),
+                loopStart = sound.loopStart ?: 0L,
+                loopEnd = sound.loopEnd ?: 0L
+            )
+        }
+        return manifest.copy(sounds = fixedSounds)
     }
     
     /**

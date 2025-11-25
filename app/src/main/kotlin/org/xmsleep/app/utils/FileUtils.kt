@@ -6,6 +6,31 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
+ * 获取目录大小（排除指定的子目录）
+ */
+fun getDirectorySizeExcluding(directory: File, excludeDirName: String): Long {
+    var size = 0L
+    try {
+        if (directory.exists() && directory.isDirectory) {
+            directory.listFiles()?.forEach { file ->
+                // 排除指定目录
+                if (file.name == excludeDirName && file.isDirectory) {
+                    return@forEach
+                }
+                size += if (file.isDirectory) {
+                    getDirectorySize(file)
+                } else {
+                    file.length()
+                }
+            }
+        }
+    } catch (e: Exception) {
+        // 忽略错误，继续计算其他文件
+    }
+    return size
+}
+
+/**
  * 获取目录大小
  */
 fun getDirectorySize(directory: File): Long {
@@ -43,16 +68,26 @@ fun formatBytes(bytes: Long): String {
 }
 
 /**
- * 计算缓存大小
+ * 计算缓存大小（包括音频缓存和应用缓存）
  */
 suspend fun calculateCacheSize(context: Context): Long {
     return withContext(Dispatchers.IO) {
         var totalSize = 0L
         
-        // 内部缓存目录
+        // 首先获取专用音频缓存大小
+        try {
+            val cacheManager = org.xmsleep.app.audio.AudioCacheManager.getInstance(context)
+            totalSize += cacheManager.getCacheSize()
+        } catch (e: Exception) {
+            // 如果获取音频缓存失败，继续计算其他缓存
+            android.util.Log.w("FileUtils", "获取音频缓存大小失败: ${e.message}")
+        }
+        
+        // 内部缓存目录（排除音频缓存子目录以避免重复计算）
         context.cacheDir?.let { cacheDir ->
             if (cacheDir.exists()) {
-                totalSize += getDirectorySize(cacheDir)
+                // 计算缓存目录大小（排除 audio_cache 子目录）
+                totalSize += getDirectorySizeExcluding(cacheDir, "audio_cache")
             }
         }
         
@@ -73,7 +108,16 @@ suspend fun calculateCacheSize(context: Context): Long {
 suspend fun clearApplicationCache(context: Context) {
     withContext(Dispatchers.IO) {
         try {
-            // 清理缓存目录
+            // 清理音频缓存
+            try {
+                val cacheManager = org.xmsleep.app.audio.AudioCacheManager.getInstance(context)
+                cacheManager.clearCache()
+                android.util.Log.d("FileUtils", "音频缓存清理完成")
+            } catch (e: Exception) {
+                android.util.Log.w("FileUtils", "音频缓存清理失败: ${e.message}")
+            }
+            
+            // 清理应用缓存目录
             val cacheDir = context.cacheDir
             if (cacheDir != null && cacheDir.exists()) {
                 deleteRecursive(cacheDir)

@@ -705,11 +705,11 @@ fun SettingsScreen(
                             org.xmsleep.app.audio.AudioManager.Sound.LIBRARY,
                             org.xmsleep.app.audio.AudioManager.Sound.HEAVY_RAIN,
                             org.xmsleep.app.audio.AudioManager.Sound.TYPEWRITER,
-                            org.xmsleep.app.audio.AudioManager.Sound.THUNDER_NEW,
+                            org.xmsleep.app.audio.AudioManager.Sound.THUNDER,
                             org.xmsleep.app.audio.AudioManager.Sound.CLOCK,
                             org.xmsleep.app.audio.AudioManager.Sound.FOREST_BIRDS,
                             org.xmsleep.app.audio.AudioManager.Sound.DRIFTING,
-                            org.xmsleep.app.audio.AudioManager.Sound.CAMPFIRE_NEW,
+                            org.xmsleep.app.audio.AudioManager.Sound.CAMPFIRE,
                             org.xmsleep.app.audio.AudioManager.Sound.WIND,
                             org.xmsleep.app.audio.AudioManager.Sound.KEYBOARD,
                             org.xmsleep.app.audio.AudioManager.Sound.SNOW_WALKING
