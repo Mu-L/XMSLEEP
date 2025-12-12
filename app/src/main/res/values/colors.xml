@@ -2,5 +2,8 @@
 <resources>
     <!-- Launcher icon background (Light mode) -->
     <color name="launcher_background">#FFFFFF</color>
+    
+    <!-- Splash Screen 背景色 -->
+    <color name="splash_background">#FFFFFF</color>
 </resources>
 

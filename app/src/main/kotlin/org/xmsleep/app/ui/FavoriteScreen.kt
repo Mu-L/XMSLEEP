@@ -1,18 +1,27 @@
 package org.xmsleep.app.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -26,6 +35,11 @@ import org.xmsleep.app.preferences.PreferencesManager
 import org.xmsleep.app.i18n.LanguageManager
 import org.xmsleep.app.utils.ToastUtils
 import android.widget.Toast
+import android.content.ContentUris
+import android.os.Build
+import android.provider.MediaStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * 收藏页面
@@ -62,6 +76,16 @@ fun FavoriteScreen(
     }
     var downloadingSounds by remember { mutableStateOf<Map<String, Float>>(emptyMap()) }
     var playingRemoteSounds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    
+    // 本地音频文件相关状态
+    var localAudioFiles by remember { mutableStateOf<List<LocalAudioFile>>(emptyList()) }
+    var favoriteLocalAudioUris by remember { 
+        mutableStateOf(PreferencesManager.getLocalAudioFavorites(context))
+    }
+    val localAudioPlayer = remember { org.xmsleep.app.audio.LocalAudioPlayer.getInstance() }
+    val playingAudioIds by localAudioPlayer.playingAudioIds.collectAsState()
+    val playingAudioId by localAudioPlayer.playingAudioId.collectAsState()
+    val currentVolume by localAudioPlayer.currentVolume.collectAsState()
     
     // 获取当前语言
     val currentLanguage = LanguageManager.getCurrentLanguage(context)
@@ -184,6 +208,11 @@ fun FavoriteScreen(
         remoteSounds.filter { remoteFavorites.contains(it.id) }
     }
     
+    // 过滤出收藏的本地音频文件
+    val favoriteLocalAudioFiles = remember(favoriteLocalAudioUris, localAudioFiles) {
+        localAudioFiles.filter { favoriteLocalAudioUris.contains(it.uri.toString()) }
+    }
+    
     // 加载远程音频列表
     LaunchedEffect(Unit) {
         try {
@@ -191,6 +220,72 @@ fun FavoriteScreen(
             remoteSounds = sounds
         } catch (e: Exception) {
             android.util.Log.e("FavoriteScreen", "加载远程音频失败: ${e.message}")
+        }
+    }
+    
+    // 扫描本地音频文件
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            try {
+                val audioFiles = mutableListOf<LocalAudioFile>()
+                val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+                } else {
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                }
+                
+                val projection = arrayOf(
+                    MediaStore.Audio.Media._ID,
+                    MediaStore.Audio.Media.DISPLAY_NAME,  // 使用 DISPLAY_NAME 而不是 TITLE
+                    MediaStore.Audio.Media.ARTIST,
+                    MediaStore.Audio.Media.DURATION,
+                    MediaStore.Audio.Media.DATE_ADDED
+                )
+                
+                val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
+                
+                context.contentResolver.query(
+                    collection,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )?.use { cursor ->
+                    val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+                    val displayNameColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME)
+                    val artistColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+                    val durationColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+                    val dateColumn = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+                    
+                    while (cursor.moveToNext()) {
+                        val id = cursor.getLong(idColumn)
+                        val displayName = cursor.getString(displayNameColumn)
+                        // 从 DISPLAY_NAME 中移除扩展名作为 title
+                        val title = displayName.substringBeforeLast(".")
+                        val artist = cursor.getString(artistColumn)
+                        val duration = cursor.getLong(durationColumn)
+                        val dateAdded = cursor.getLong(dateColumn)
+                        val uri = ContentUris.withAppendedId(collection, id)
+                        
+                        audioFiles.add(
+                            LocalAudioFile(
+                                id = id,
+                                title = title,
+                                artist = artist,
+                                duration = duration,
+                                uri = uri,
+                                dateAdded = dateAdded
+                            )
+                        )
+                    }
+                }
+                
+                withContext(Dispatchers.Main) {
+                    localAudioFiles = audioFiles
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FavoriteScreen", "扫描本地音频文件失败", e)
+            }
         }
     }
     
@@ -254,7 +349,7 @@ fun FavoriteScreen(
                 .padding(paddingValues)
         ) {
             // 内容区域
-            val allFavoritesEmpty = favoriteItems.isEmpty() && favoriteRemoteSounds.isEmpty()
+            val allFavoritesEmpty = favoriteItems.isEmpty() && favoriteRemoteSounds.isEmpty() && favoriteLocalAudioFiles.isEmpty()
             if (allFavoritesEmpty) {
                 // 没有收藏时显示占位符
                 Box(
@@ -534,6 +629,262 @@ fun FavoriteScreen(
                             )
                         }
                     }
+                    
+                    // 本地音频文件收藏
+                    items(favoriteLocalAudioFiles, key = { it.id }) { audio ->
+                        var showVolumeDialog by remember { mutableStateOf(false) }
+                        var showMenu by remember { mutableStateOf(false) }
+                        val isPlaying = playingAudioIds.contains(audio.id)
+                        
+                        // 使用与本地声音相同的卡片样式
+                        LocalAudioFileCard(
+                            audio = audio,
+                            isPlaying = isPlaying,
+                            isFavorite = true, // 在收藏页面中，所有项都是收藏的
+                            columnsCount = columnsCount,
+                            onCardClick = {
+                                // 切换播放状态
+                                localAudioPlayer.toggleAudio(
+                                    context = context,
+                                    audioId = audio.id,
+                                    audioUri = audio.uri,
+                                    onError = { message ->
+                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                                
+                                // 管理音乐服务
+                                if (localAudioPlayer.hasActiveAudio() || audioManager.hasAnyPlayingSounds()) {
+                                    audioManager.startMusicService(context)
+                                } else {
+                                    audioManager.stopMusicService(context)
+                                }
+                            },
+                            onVolumeClick = { showVolumeDialog = true },
+                            onLongPress = { showMenu = true },
+                            onFavoriteChange = { isFavorite ->
+                                if (!isFavorite) {
+                                    // 取消收藏
+                                    val uriString = audio.uri.toString()
+                                    val newFavorites = favoriteLocalAudioUris - uriString
+                                    favoriteLocalAudioUris = newFavorites
+                                    PreferencesManager.saveLocalAudioFavorites(context, newFavorites)
+                                    ToastUtils.showToast(context, context.getString(R.string.unfavorited_success))
+                                }
+                            }
+                        )
+                        
+                        // 音量调节弹窗
+                        if (showVolumeDialog) {
+                            var volume by remember(audio.id) { mutableStateOf(localAudioPlayer.getVolume(audio.id)) }
+                            
+                            AlertDialog(
+                                onDismissRequest = { showVolumeDialog = false },
+                                title = { Text(audio.title) },
+                                text = {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Text(
+                                            context.getString(R.string.adjust_volume),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        
+                                        Slider(
+                                            value = volume,
+                                            onValueChange = { 
+                                                volume = it
+                                                localAudioPlayer.setVolume(audio.id, it)
+                                            },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            valueRange = 0f..1f,
+                                            steps = 19
+                                        )
+                                        
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "0%",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "${(volume * 100).toInt()}%",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = "100%",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { showVolumeDialog = false }) {
+                                        Text(context.getString(R.string.ok))
+                                    }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showVolumeDialog = false }) {
+                                        Text(context.getString(R.string.cancel))
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * 本地音频文件卡片（收藏页面专用）
+ * 样式与本地声音和远程声音保持一致
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun LocalAudioFileCard(
+    audio: LocalAudioFile,
+    isPlaying: Boolean,
+    isFavorite: Boolean = false,
+    columnsCount: Int = 3,
+    onCardClick: () -> Unit,
+    onVolumeClick: () -> Unit = {},
+    onLongPress: () -> Unit = {},
+    onFavoriteChange: (Boolean) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var showMenu by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    
+    val alpha by animateFloatAsState(
+        targetValue = if (isPlaying) 1f else 0.6f,
+        label = "alpha"
+    )
+    
+    val cardHeight = if (columnsCount == 3) 80.dp else 100.dp
+    
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(cardHeight)
+            .combinedClickable(
+                onClick = onCardClick,
+                onLongClick = {
+                    scope.launch {
+                        showMenu = true
+                        onLongPress()
+                    }
+                }
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+        ) {
+            // 标题（左上角）
+            Column(
+                modifier = Modifier.align(Alignment.TopStart),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = audio.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.alpha(alpha),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (columnsCount == 2 && audio.artist != null) {
+                    Text(
+                        text = audio.artist,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.alpha(alpha * 0.8f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+            
+            // 长按菜单
+            Box(modifier = Modifier.align(Alignment.TopStart)) {
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false },
+                    modifier = Modifier.width(120.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    // 收藏选项
+                    DropdownMenuItem(
+                        text = {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (isFavorite) Icons.Default.Star else Icons.Outlined.StarOutline,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = if (isFavorite) context.getString(R.string.cancel_favorite) else context.getString(R.string.favorite),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        onClick = {
+                            onFavoriteChange(!isFavorite)
+                            showMenu = false
+                        }
+                    )
+                }
+            }
+            
+            // 音频可视化器（左下角，只在播放时显示）
+            if (isPlaying) {
+                AudioVisualizer(
+                    isPlaying = isPlaying,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .size(24.dp, 16.dp)
+                        .alpha(alpha),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            // 音量图标（右下角，只在播放时显示）
+            if (isPlaying) {
+                IconButton(
+                    onClick = onVolumeClick,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 10.dp, y = 12.dp)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = context.getString(R.string.adjust_volume),
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }

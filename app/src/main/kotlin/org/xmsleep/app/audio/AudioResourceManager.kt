@@ -148,6 +148,18 @@ class AudioResourceManager private constructor(context: Context) {
                     fixedMetadata.remoteUrl?.let { Uri.parse(it) }
                 }
             }
+            AudioSource.IMPORTED -> {
+                // 导入的音频文件，使用本地路径
+                fixedMetadata.importedPath?.let { path ->
+                    val file = File(path)
+                    if (file.exists()) {
+                        Uri.fromFile(file)
+                    } else {
+                        Log.w(TAG, "导入的音频文件不存在: $path")
+                        null
+                    }
+                }
+            }
             null -> null
         }
     }

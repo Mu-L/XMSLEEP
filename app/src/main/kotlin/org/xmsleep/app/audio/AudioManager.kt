@@ -830,11 +830,19 @@ class AudioManager private constructor() {
     }
     
     /**
-     * 立即停止所有声音播放
+     * 立即停止所有声音播放（包括本地声音、远程声音和本地音频文件）
      */
     fun stopAllSounds() {
         try {
             Log.d(TAG, "开始停止所有声音...")
+            
+            // 停止本地音频文件
+            try {
+                LocalAudioPlayer.getInstance().stopAllAudios()
+                Log.d(TAG, "本地音频文件已停止")
+            } catch (e: Exception) {
+                Log.e(TAG, "停止本地音频文件失败: ${e.message}")
+            }
             
             // 停止所有本地声音
             players.forEach { (sound, player) ->
@@ -997,14 +1005,23 @@ class AudioManager private constructor() {
     }
     
     /**
-     * 检查是否有任何声音正在播放（本地+远程）
+     * 检查是否有任何声音正在播放（本地+远程+本地音频文件）
      */
     fun hasAnyPlayingSounds(): Boolean {
         // 检查本地声音
         val hasLocalPlaying = playingStates.values.any { it == true }
         // 检查远程声音
         val hasRemotePlaying = remotePlayingStates.values.any { it == true }
-        return hasLocalPlaying || hasRemotePlaying
+        // 检查本地音频文件（检查是否有活跃的音频，包括暂停状态）
+        val localAudioPlayer = LocalAudioPlayer.getInstance()
+        val hasLocalAudioActive = localAudioPlayer.hasActiveAudio()
+        
+        val result = hasLocalPlaying || hasRemotePlaying || hasLocalAudioActive
+        
+        // 始终打印日志，方便调试
+        Log.d(TAG, "hasAnyPlayingSounds 调用: 本地声音=$hasLocalPlaying, 远程声音=$hasRemotePlaying, 本地音频活跃=$hasLocalAudioActive, 最终结果=$result")
+        
+        return result
     }
     
     /**

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.xmsleep.app.R
 import kotlin.system.exitProcess
 
 /**
@@ -163,7 +164,7 @@ fun CrashScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("复制错误")
+                    Text(context.getString(R.string.copy_error))
                 }
                 
                 // 重启按钮
@@ -180,7 +181,7 @@ fun CrashScreen(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("重启应用")
+                    Text(context.getString(R.string.restart_app))
                 }
             }
             
@@ -198,7 +199,7 @@ fun CrashScreen(
         Snackbar(
             modifier = Modifier.padding(16.dp)
         ) {
-            Text("错误信息已复制到剪贴板")
+            Text(context.getString(R.string.error_copied))
         }
     }
 }

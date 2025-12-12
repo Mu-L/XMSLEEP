@@ -36,6 +36,8 @@ object PreferencesManager {
     private const val KEY_PRESET3_REMOTE_PINNED = "preset3_remote_pinned"
     // 当前激活的预设
     private const val KEY_ACTIVE_PRESET = "active_preset"
+    // 本地音频收藏列表
+    private const val KEY_LOCAL_AUDIO_FAVORITES = "local_audio_favorites"
     
     /**
      * 从旧版本迁移数据（如果存在）
@@ -410,6 +412,22 @@ object PreferencesManager {
     fun getActivePreset(context: Context): Int {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getInt(KEY_ACTIVE_PRESET, 1) // 默认为预设1
+    }
+    
+    /**
+     * 保存本地音频收藏列表
+     */
+    fun saveLocalAudioFavorites(context: Context, uris: Set<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_LOCAL_AUDIO_FAVORITES, uris).apply()
+    }
+    
+    /**
+     * 获取本地音频收藏列表
+     */
+    fun getLocalAudioFavorites(context: Context): Set<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getStringSet(KEY_LOCAL_AUDIO_FAVORITES, emptySet()) ?: emptySet()
     }
 }
 

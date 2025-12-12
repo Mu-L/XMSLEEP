@@ -111,11 +111,13 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.foundation:foundation")
-    // Pull-to-refresh (Accompanist)
+    // Accompanist
     implementation("com.google.accompanist:accompanist-swiperefresh:0.34.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0") // 保持 0.36.0，与我们的 Compose BOM 2024.12.01 兼容
     
     // AndroidX
     implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.navigation:navigation-compose:2.9.5")
@@ -148,5 +150,17 @@ dependencies {
     
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
+    
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+    
+    // Android Testing
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test:runner:1.5.2")
+    androidTestImplementation("androidx.test:rules:1.5.0")
 }
 

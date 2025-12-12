@@ -103,10 +103,6 @@ class CrashHandler private constructor(private val context: Context) : Thread.Un
             
             Log.e(TAG, crashLog)
             
-            // TODO: 可以选择保存到文件或上传到服务器
-            // val file = File(context.getExternalFilesDir(null), "crash_${System.currentTimeMillis()}.log")
-            // file.writeText(crashLog)
-            
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save crash log", e)
         }

@@ -48,6 +48,7 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -505,16 +506,12 @@ fun SoundsScreen(
         }
     }
     
-    // 检查是否有任何声音在播放（本地+远程）
+    // 检查是否有任何声音在播放（本地+远程+本地音频文件）
     var hasAnyPlayingSounds by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         while (true) {
-            // 检查本地声音
-            val localPlaying = soundItems.any { audioManager.isPlayingSound(it.sound) }
-            // 检查远程声音
-            val remotePlaying = playingRemoteSounds.isNotEmpty() || 
-                remoteSounds.any { audioManager.isPlayingRemoteSound(it.id) }
-            hasAnyPlayingSounds = localPlaying || remotePlaying
+            // 使用 AudioManager 的统一方法检查所有音频
+            hasAnyPlayingSounds = audioManager.hasAnyPlayingSounds()
             
             // 如果没有声音在播放且倒计时是激活状态，自动取消倒计时
             if (!hasAnyPlayingSounds && isTimerActive) {
@@ -667,14 +664,20 @@ fun SoundsScreen(
             }
             
             // 右侧：收藏按钮
-            IconButton(
-                onClick = { onNavigateToFavorite() }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Bookmark,
-                    contentDescription = context.getString(R.string.tab_favorite),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                // 收藏按钮
+                IconButton(
+                    onClick = { onNavigateToFavorite() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Bookmark,
+                        contentDescription = context.getString(R.string.tab_favorite),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
         

@@ -29,21 +29,29 @@ import org.xmsleep.app.ui.CrashScreen
 import org.xmsleep.app.utils.Logger
 import org.xmsleep.app.crash.CrashHandler
 import org.xmsleep.app.crash.getCrashInfo
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 /**
  * XMSLEEP 主Activity
  * 负责应用启动、权限请求和主题配置
  */
 class MainActivity : ComponentActivity() {
+    
     override fun attachBaseContext(newBase: Context?) {
         super.attachBaseContext(newBase?.let { LanguageManager.updateAppLanguage(it) })
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 安装 Splash Screen（必须在 super.onCreate 之前）
+        installSplashScreen()
+        
         super.onCreate(savedInstanceState)
         
         // 初始化全局异常处理器
         CrashHandler.init(this)
+        
+        // 初始化本地音频媒体服务
+        org.xmsleep.app.audio.LocalAudioMediaService.getInstance(this).initialize(this)
         
         // 在应用启动时迁移旧版本的数据（如果存在）
         org.xmsleep.app.preferences.PreferencesManager.migrateFromOldVersion(this)
@@ -92,40 +100,35 @@ fun XMSLEEPApp() {
         localizedContext.resources.configuration
     }
     
-    // 请求存储权限
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        // 权限请求结果处理
-        Logger.d("MainActivity", "存储权限请求结果: $permissions")
+    // 请求通知权限（Android 13+）
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        Logger.d("MainActivity", "通知权限请求结果: $isGranted")
     }
     
     LaunchedEffect(Unit) {
-        // 检查并请求存储权限
-        val permissionsToRequest = mutableListOf<String>()
-        
-        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
-            // Android 10及以下需要存储权限
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) 
-                != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) 
-                != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-        }
-        
         // Android 13+ 需要通知权限
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-        
-        if (permissionsToRequest.isNotEmpty()) {
-            permissionLauncher.launch(permissionsToRequest.toTypedArray())
+    }
+    
+    // 音频文件权限请求 launcher（用于本地音频访问）
+    var shouldNavigateToLocalAudio by remember { mutableStateOf(false) }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        Logger.d("MainActivity", "音频权限请求结果: $isGranted")
+        if (isGranted && shouldNavigateToLocalAudio) {
+            // 权限已授予，标记需要导航（MainScreen 会处理导航）
+            shouldNavigateToLocalAudio = false
+        } else if (!isGranted) {
+            // 权限被拒绝，重置标记
+            shouldNavigateToLocalAudio = false
         }
     }
     
@@ -198,6 +201,8 @@ fun XMSLEEPApp() {
                     hideAnimation = hideAnimation,
                     soundCardsColumnsCount = soundCardsColumnsCount,
                     currentLanguage = currentLanguage,
+                    audioPermissionLauncher = audioPermissionLauncher,
+                    onAudioPermissionGranted = { shouldNavigateToLocalAudio = true },
                     onLanguageChange = { currentLanguage = it },
                     onDarkModeChange = { newMode ->
                         darkMode = newMode

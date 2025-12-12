@@ -9,7 +9,9 @@ enum class AudioSource {
     @SerializedName("LOCAL")
     LOCAL,      // 本地资源（打包在APK中）
     @SerializedName("REMOTE")
-    REMOTE      // 网络资源（从GitHub下载）
+    REMOTE,     // 网络资源（从GitHub下载）
+    @SerializedName("IMPORTED")
+    IMPORTED    // 用户导入的音频文件
 }
 
 /**
@@ -39,6 +41,8 @@ data class SoundMetadata(
     val source: AudioSource? = null,   // 资源来源（可为 null，后执会修复）
     val localResourceId: Int? = null,   // 本地资源ID（R.raw.xxx）
     val remoteUrl: String? = null,     // 网络资源URL（GitHub raw URL）
+    val importedPath: String? = null,  // 导入文件的本地路径
+    val importedDate: Long? = null,    // 导入时间戳
     
     // 播放参数
     val loopStart: Long? = null,        // 循环起点（毫秒）

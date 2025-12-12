@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -24,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.xmsleep.app.R
 import org.xmsleep.app.audio.AudioManager
 import org.xmsleep.app.i18n.LanguageManager
@@ -49,6 +51,8 @@ fun MainScreen(
     hideAnimation: Boolean,
     soundCardsColumnsCount: Int,
     currentLanguage: LanguageManager.Language,
+    audioPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
+    onAudioPermissionGranted: () -> Unit,
     onLanguageChange: (LanguageManager.Language) -> Unit,
     onDarkModeChange: (DarkModeOption) -> Unit,
     onColorChange: (Color) -> Unit,
@@ -61,6 +65,55 @@ fun MainScreen(
     val navigator = rememberXMSleepNavigator()
     var selectedItem by remember { mutableIntStateOf(1) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    
+    // 本地音频权限相关
+    val requiredPermission = if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_AUDIO
+    } else {
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+    
+    var showPermissionDialog by remember { mutableStateOf(false) }
+    var permissionGrantedPending by remember { mutableStateOf(false) }
+    
+    // 监听权限授予状态，导航到本地音频页面
+    LaunchedEffect(permissionGrantedPending) {
+        if (permissionGrantedPending) {
+            val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                requiredPermission
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+            
+            if (hasPermission) {
+                navigator.navController.navigate("local_audio")
+                permissionGrantedPending = false
+            }
+        }
+    }
+    
+    // 监听权限变化（当用户从设置返回时）
+    val permissionLifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    var shouldCheckPermissionOnResume by remember { mutableStateOf(false) }
+    DisposableEffect(permissionLifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME && shouldCheckPermissionOnResume) {
+                val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context,
+                    requiredPermission
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                
+                if (hasPermission) {
+                    // 权限已授予，进入页面
+                    navigator.navController.navigate("local_audio")
+                    shouldCheckPermissionOnResume = false
+                }
+            }
+        }
+        permissionLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            permissionLifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     
     // 用于触发浮动按钮收缩的状态
     var shouldCollapseFloatingButton by remember { mutableStateOf(false) }
@@ -368,7 +421,7 @@ fun MainScreen(
     // 监听当前路由，判断是否在二级页面
     val currentBackStackEntry by navigator.navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val isInSecondaryPage = currentRoute in listOf("theme", "favorite")
+    val isInSecondaryPage = currentRoute in listOf("theme", "favorite", "local_audio")
     val isMainRoute = !isInSecondaryPage  // 主页面 = 不在二级页面
     
     // 使用ProvideNavigator提供导航器给子组件
@@ -527,6 +580,21 @@ fun MainScreen(
                                         delay(100) // 短暂延迟后重置
                                         shouldCollapseFloatingButton = false
                                     }
+                                },
+                                onNavigateToLocalAudio = {
+                                    // 检查权限
+                                    val hasPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+                                        context,
+                                        requiredPermission
+                                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                                    
+                                    if (hasPermission) {
+                                        // 有权限，直接进入页面
+                                        navigator.navController.navigate("local_audio")
+                                    } else {
+                                        // 没有权限，显示对话框
+                                        showPermissionDialog = true
+                                    }
                                 }
                             )
                         }
@@ -616,6 +684,13 @@ fun MainScreen(
                         }
                         favoriteSounds.value = currentSet
                     }
+                )
+            }
+            
+            composable("local_audio") {
+                org.xmsleep.app.ui.LocalAudioScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onBack = { navigator.popBackStack() }
                 )
             }
         }
@@ -765,6 +840,36 @@ fun MainScreen(
             },
             updateViewModel = updateViewModel,
             currentLanguage = currentLanguage
+        )
+    }
+    
+    // 本地音频权限请求对话框
+    if (showPermissionDialog) {
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            icon = { Icon(Icons.Default.Folder, contentDescription = null) },
+            title = { Text(context.getString(R.string.storage_permission_required)) },
+            text = { Text(context.getString(R.string.permission_denied_hint)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        android.util.Log.d("MainScreen", "点击授予权限按钮")
+                        showPermissionDialog = false
+                        // 使用从 MainActivity 传递的 audioPermissionLauncher 请求权限
+                        audioPermissionLauncher.launch(requiredPermission)
+                        permissionGrantedPending = true
+                        onAudioPermissionGranted()
+                        android.util.Log.d("MainScreen", "权限请求已发送: $requiredPermission")
+                    }
+                ) {
+                    Text(context.getString(R.string.request_permission))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionDialog = false }) {
+                    Text(context.getString(R.string.cancel))
+                }
+            }
         )
     }
 }

@@ -329,10 +329,10 @@ fun UpdateDialog(
         is UpdateState.InstallPermissionRequested -> {
             AlertDialog(
                 onDismissRequest = onDismiss,
-                title = { Text("需要安装权限") },
+                title = { Text(context.getString(R.string.install_permission_required)) },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("请在设置中允许安装来自此来源的应用，然后返回应用继续安装。")
+                        Text(context.getString(R.string.install_permission_hint))
                     }
                 },
                 confirmButton = {
@@ -342,12 +342,12 @@ fun UpdateDialog(
                             updateViewModel.retryInstall()
                         }
                     ) {
-                        Text("我已允许，继续安装")
+                        Text(context.getString(R.string.allowed_continue_install))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = onDismiss) {
-                        Text("取消")
+                        Text(context.getString(R.string.cancel))
                     }
                 }
             )

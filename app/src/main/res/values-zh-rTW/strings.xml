@@ -202,4 +202,31 @@
     
     <!-- 預設空狀態提示 -->
     <string name="preset_empty_hint">長按音頻卡片添加到此預設</string>
+    
+    <!-- 本地音頻權限 -->
+    <string name="storage_permission_required">需要存儲權限</string>
+    <string name="permission_denied_hint">需要存儲權限才能訪問本地音頻文件</string>
+    <string name="request_permission">授予權限</string>
+    <string name="local_audio">本地音頻</string>
+    <string name="search_audio">搜索音頻</string>
+    <string name="no_search_results">未找到匹配的音頻</string>
+    <string name="no_audio_files_found">設備上沒有找到音頻文件</string>
+    <string name="grant_storage_permission_hint">請在設置中授予存儲權限以訪問本地音頻</string>
+    <string name="grant_permission">去授權</string>
+    <string name="rename">重命名</string>
+    <string name="permission_permanently_denied_hint">權限已被拒絕，請在設置中手動授予存儲權限</string>
+    <string name="renaming">正在重命名...</string>
+    <string name="rename_success">重命名成功</string>
+    <string name="rename_failed">重命名失敗或已取消</string>
+    <string name="new_name">新名稱</string>
+    <string name="delete">刪除</string>
+    <string name="delete_success">刪除成功</string>
+    <string name="delete_cancelled">刪除已取消</string>
+    <string name="confirm_delete">確認刪除</string>
+    <string name="confirm_delete_message">確定要刪除 \"%1$s\" 嗎？此操作無法撤銷。</string>
+    <string name="add_to_favorite">添加到收藏</string>
+    <string name="remove_from_favorite">取消收藏</string>
+    <string name="added_to_favorite">已添加到收藏</string>
+    <string name="removed_from_favorite">已取消收藏</string>
+    <string name="scanning_local_audio">正在掃描本地音頻文件...</string>
 </resources>

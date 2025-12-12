@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -43,7 +44,8 @@ import org.xmsleep.app.ui.components.pagerTabIndicatorOffset
 fun StarSkyScreen(
     modifier: Modifier = Modifier,
     activePreset: Int = 1, // 当前激活的预设
-    onScrollDetected: () -> Unit = {}
+    onScrollDetected: () -> Unit = {},
+    onNavigateToLocalAudio: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -309,7 +311,7 @@ fun StarSkyScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-        // 标题栏（包含标题和布局切换按钮）
+        // 标题栏（包含标题和操作按钮）
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -324,22 +326,39 @@ fun StarSkyScreen(
                 modifier = Modifier.clickable { showDebugPanel = !showDebugPanel }
             )
             
-            // 布局切换按钮
-            IconButton(
-                onClick = { 
-                    val newColumnsCount = if (columnsCount == 2) 3 else 2
-                    columnsCount = newColumnsCount
-                    org.xmsleep.app.preferences.PreferencesManager.saveStarSkyColumnsCount(context, newColumnsCount)
-                }
+            // 右侧按钮组
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = if (columnsCount == 2) Icons.Default.GridView else Icons.Outlined.ViewAgenda,
-                    contentDescription = if (columnsCount == 2) 
-                        context.getString(R.string.switch_to_3_columns) 
-                    else 
-                        context.getString(R.string.switch_to_2_columns),
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                // 文件夹图标（本地音频）
+                IconButton(
+                    onClick = onNavigateToLocalAudio
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Folder,
+                        contentDescription = "本地音频",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                
+                // 布局切换按钮
+                IconButton(
+                    onClick = { 
+                        val newColumnsCount = if (columnsCount == 2) 3 else 2
+                        columnsCount = newColumnsCount
+                        org.xmsleep.app.preferences.PreferencesManager.saveStarSkyColumnsCount(context, newColumnsCount)
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (columnsCount == 2) Icons.Default.GridView else Icons.Outlined.ViewAgenda,
+                        contentDescription = if (columnsCount == 2) 
+                            context.getString(R.string.switch_to_3_columns) 
+                        else 
+                            context.getString(R.string.switch_to_2_columns),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
         
@@ -400,7 +419,7 @@ fun StarSkyScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
-                    Text("正在加载...", style = MaterialTheme.typography.bodySmall)
+                    Text(context.getString(R.string.loading), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

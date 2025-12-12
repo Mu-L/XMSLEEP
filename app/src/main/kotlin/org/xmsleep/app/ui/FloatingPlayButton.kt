@@ -28,6 +28,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -77,6 +78,12 @@ private sealed interface FloatingPlayItem {
         override val id: String get() = sound.id
         override val name: String get() = sound.name
         override val isRemote: Boolean get() = true
+    }
+    
+    data class LocalAudio(val audioId: Long, val title: String) : FloatingPlayItem {
+        override val id: String get() = "local_audio_$audioId"
+        override val name: String get() = title
+        override val isRemote: Boolean get() = false
     }
 }
 
@@ -128,6 +135,10 @@ fun FloatingPlayButtonNew(
     var allPlayingSounds by remember { mutableStateOf<List<FloatingPlayItem>>(emptyList()) }
     
     // 定时检查播放状态（最多支持10个同时播放）
+    val localAudioPlayer = remember { org.xmsleep.app.audio.LocalAudioPlayer.getInstance() }
+    val playingAudioIds by localAudioPlayer.playingAudioIds.collectAsState()
+    
+    
     LaunchedEffect(Unit) {
         while (true) {
             // 检查本地声音
@@ -142,8 +153,48 @@ fun FloatingPlayButtonNew(
                 FloatingPlayItem.Remote(sound)
             }
             
+            // 检查本地音频文件 - 支持多个音频同时播放
+            val localAudioPlaying = if (playingAudioIds.isNotEmpty()) {
+                // 为每个正在播放的音频查询标题
+                playingAudioIds.mapNotNull { audioId ->
+                    val currentTitle = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            val collection = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                                android.provider.MediaStore.Audio.Media.getContentUri(android.provider.MediaStore.VOLUME_EXTERNAL)
+                            } else {
+                                android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+                            }
+                            val uri = android.content.ContentUris.withAppendedId(collection, audioId)
+                            context.contentResolver.query(
+                                uri,
+                                arrayOf(android.provider.MediaStore.Audio.Media.DISPLAY_NAME),
+                                null,
+                                null,
+                                null
+                            )?.use { cursor ->
+                                if (cursor.moveToFirst()) {
+                                    val displayNameColumn = cursor.getColumnIndexOrThrow(android.provider.MediaStore.Audio.Media.DISPLAY_NAME)
+                                    val displayName = cursor.getString(displayNameColumn)
+                                    displayName.substringBeforeLast(".")
+                                } else null
+                            }
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+                    
+                    if (currentTitle != null) {
+                        FloatingPlayItem.LocalAudio(audioId, currentTitle)
+                    } else {
+                        null
+                    }
+                }
+            } else {
+                emptyList()
+            }
+            
             // 合并并限制最多10个
-            allPlayingSounds = (localPlaying + remotePlaying).take(10)
+            allPlayingSounds = (localPlaying + remotePlaying + localAudioPlaying).take(10)
             
             delay(300) // 每300ms检查一次
         }
@@ -553,12 +604,14 @@ private fun ExpandedPlayingList(
                             when (item) {
                                 is FloatingPlayItem.Local -> item.sound
                                 is FloatingPlayItem.Remote -> null
+                                is FloatingPlayItem.LocalAudio -> null
                             }
                         }
                         val remoteSoundIds = playingSounds.mapNotNull { item ->
                             when (item) {
                                 is FloatingPlayItem.Local -> null
                                 is FloatingPlayItem.Remote -> item.sound.id
+                                is FloatingPlayItem.LocalAudio -> null
                             }
                         }
                         
@@ -614,6 +667,7 @@ private fun FloatingPlayItemView(
 ) {
     val context = LocalContext.current
     val isDarkTheme = isSystemInDarkTheme()
+    val localAudioPlayer = remember { org.xmsleep.app.audio.LocalAudioPlayer.getInstance() }
     
     // 获取当前语言设置
     val currentLanguage = org.xmsleep.app.i18n.LanguageManager.getCurrentLanguage(context)
@@ -650,12 +704,14 @@ private fun FloatingPlayItemView(
                 else -> item.sound.name
             }
         }
+        is FloatingPlayItem.LocalAudio -> item.title
     }
     // 获取音频音量
     val volume = remember(item.id) {
         when (item) {
             is FloatingPlayItem.Local -> audioManager.getVolume(item.sound)
             is FloatingPlayItem.Remote -> audioManager.getRemoteVolume(item.id)
+            is FloatingPlayItem.LocalAudio -> localAudioPlayer.getVolume(item.audioId)
         }
     }
     
@@ -726,6 +782,7 @@ private fun FloatingPlayItemView(
                         when (item) {
                             is FloatingPlayItem.Local -> audioManager.pauseSound(item.sound)
                             is FloatingPlayItem.Remote -> audioManager.pauseRemoteSound(item.id)
+                            is FloatingPlayItem.LocalAudio -> localAudioPlayer.stopAudio(item.audioId)
                         }
                         // 调用外部回调触发移除动画
                         onRemove()
@@ -753,8 +810,9 @@ private fun FloatingPlayItemView(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            @Suppress("DEPRECATION")
             Icon(
-                imageVector = Icons.Default.VolumeUp,
+                imageVector = Icons.Default.VolumeDown,
                 contentDescription = null,
                 tint = contentColor.copy(alpha = 0.7f),
                 modifier = Modifier.size(16.dp)
@@ -769,6 +827,7 @@ private fun FloatingPlayItemView(
                     when (item) {
                         is FloatingPlayItem.Local -> audioManager.setVolume(item.sound, newVolume)
                         is FloatingPlayItem.Remote -> audioManager.setRemoteVolume(item.id, newVolume)
+                        is FloatingPlayItem.LocalAudio -> localAudioPlayer.setVolume(item.audioId, newVolume)
                     }
                 },
                 modifier = Modifier.weight(1f), // 自适应宽度

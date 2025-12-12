@@ -204,4 +204,31 @@ If you have any questions, please contact us through the in-app contact method.<
     
     <!-- Preset Empty State Hint -->
     <string name="preset_empty_hint">Long press sound cards to add</string>
+    
+    <!-- Local Audio Permissions -->
+    <string name="storage_permission_required">Storage Permission Required</string>
+    <string name="permission_denied_hint">Storage permission is required to access local audio files</string>
+    <string name="request_permission">Grant Permission</string>
+    <string name="local_audio">Local Audio</string>
+    <string name="search_audio">Search Audio</string>
+    <string name="no_search_results">No matching audio found</string>
+    <string name="no_audio_files_found">No audio files found on device</string>
+    <string name="grant_storage_permission_hint">Please grant storage permission in settings to access local audio</string>
+    <string name="grant_permission">Grant Permission</string>
+    <string name="rename">Rename</string>
+    <string name="permission_permanently_denied_hint">Permission has been denied, please manually grant storage permission in settings</string>
+    <string name="renaming">Renaming...</string>
+    <string name="rename_success">Renamed successfully</string>
+    <string name="rename_failed">Rename failed or cancelled</string>
+    <string name="new_name">New Name</string>
+    <string name="delete">Delete</string>
+    <string name="delete_success">Deleted successfully</string>
+    <string name="delete_cancelled">Delete cancelled</string>
+    <string name="confirm_delete">Confirm Delete</string>
+    <string name="confirm_delete_message">Are you sure you want to delete \"%1$s\"? This action cannot be undone.</string>
+    <string name="add_to_favorite">Add to Favorites</string>
+    <string name="remove_from_favorite">Remove from Favorites</string>
+    <string name="added_to_favorite">Added to favorites</string>
+    <string name="removed_from_favorite">Removed from favorites</string>
+    <string name="scanning_local_audio">Scanning local audio files...</string>
 </resources>
