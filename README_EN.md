@@ -148,6 +148,11 @@ Latest version available on [GitHub Releases](https://github.com/Tosencen/XMSLEE
 
 ## 📝 Changelog
 
+### v2.1.0 (2025-12-12)
+- 📚 **Documentation**: Updated audio resource upload guide and project documentation
+- 🧹 **Code Cleanup**: Cleaned up redundant files and optimized project structure
+- 🔧 **Build Optimization**: Improved build configuration and dependency management
+
 ### v2.0.8 (2025-11-26)
 - 🎨 **Theme Optimization**: Dark mode card colors fully follow app theme
 - 🍃 **Toast Improvement**: Toast background fully adapts to light/dark theme
