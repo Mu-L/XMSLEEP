@@ -756,6 +756,8 @@ class AudioManager private constructor() {
                 return
             }
 
+            Log.d(TAG, "准备暂停声音: ${sound.name}")
+            
             // 停止无缝循环检查
             stopLocalSeamlessLoopCheck(sound)
             
@@ -764,10 +766,17 @@ class AudioManager private constructor() {
             // 从播放队列中移除
             playingQueue.remove(PlayingItem.LocalSound(sound))
             
+            Log.d(TAG, "${sound.name} 已暂停，当前播放状态已更新为 false")
+            
             // 通知服务播放状态已改变
             notifyServicePlayingStateChanged()
             
-            Log.d(TAG, "${sound.name} 已暂停")
+            // 关键修复：单个音频暂停后，保存当前正在播放的音频列表
+            // 这样可以确保最近播放只包含当前正在播放的音频
+            Log.d(TAG, "暂停 ${sound.name} 后，开始保存最近播放记录")
+            saveRecentPlayingSounds()
+            
+            Log.d(TAG, "${sound.name} 暂停流程完成")
         } catch (e: Exception) {
             Log.e(TAG, "暂停 ${sound.name} 失败: ${e.message}")
         }
@@ -778,7 +787,8 @@ class AudioManager private constructor() {
      */
     fun pauseAllSounds() {
         try {
-            // 保存最近播放的声音列表
+            // 关键修复：在暂停之前保存最近播放的声音列表
+            // 此时 playingStates 还是 true，可以正确保存
             saveRecentPlayingSounds()
             
             // 暂停所有本地声音
@@ -848,8 +858,9 @@ class AudioManager private constructor() {
         try {
             Log.d(TAG, "开始停止所有声音...")
             
-            // 在停止前保存最近播放的声音列表
-            saveRecentPlayingSounds()
+            // 关键修复：用户主动停止所有音频时，不保存最近播放记录
+            // 因为用户的意图是停止播放，而不是暂停
+            // 最近播放记录应该在 pauseAllSounds() 或 onStop() 时保存
             
             // 停止本地音频文件
             try {
@@ -1049,29 +1060,53 @@ class AudioManager private constructor() {
         try {
             val context = applicationContext ?: return
             
+            Log.d(TAG, "========== 开始保存最近播放记录 ==========")
+            
             // 获取正在播放的本地声音
             val playingLocalSounds = getPlayingSounds().map { it.name }
+            Log.d(TAG, "当前正在播放的本地声音数量: ${playingLocalSounds.size}")
+            Log.d(TAG, "当前正在播放的本地声音列表: ${playingLocalSounds.joinToString()}")
+            
+            // 关键修复：总是保存当前播放状态，即使为空
+            // 这样当用户停止所有音频时，最近播放列表会被正确清除
+            org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalSounds(context, playingLocalSounds)
             if (playingLocalSounds.isNotEmpty()) {
-                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalSounds(context, playingLocalSounds)
-                Log.d(TAG, "保存最近播放的本地声音: ${playingLocalSounds.joinToString()}")
+                Log.d(TAG, "✓ 已保存最近播放的本地声音: ${playingLocalSounds.joinToString()}")
+            } else {
+                Log.d(TAG, "✓ 已清除最近播放的本地声音（当前没有正在播放的声音）")
             }
             
             // 获取正在播放的远程声音
             val playingRemoteSounds = getPlayingRemoteSoundIds()
+            Log.d(TAG, "当前正在播放的远程声音数量: ${playingRemoteSounds.size}")
+            Log.d(TAG, "当前正在播放的远程声音列表: ${playingRemoteSounds.joinToString()}")
+            
+            // 总是保存当前播放状态，即使为空
+            org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
             if (playingRemoteSounds.isNotEmpty()) {
-                org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
-                Log.d(TAG, "保存最近播放的远程声音: ${playingRemoteSounds.joinToString()}")
+                Log.d(TAG, "✓ 已保存最近播放的远程声音: ${playingRemoteSounds.joinToString()}")
+            } else {
+                Log.d(TAG, "✓ 已清除最近播放的远程声音（当前没有正在播放的声音）")
             }
             
             // 获取正在播放的本地音频文件（包含 URI 映射）
             val localAudioPlayer = LocalAudioPlayer.getInstance()
             val playingAudioUris = localAudioPlayer.getPlayingAudioUris()
+            Log.d(TAG, "当前正在播放的本地音频文件数量: ${playingAudioUris.size}")
+            Log.d(TAG, "当前正在播放的本地音频文件ID列表: ${playingAudioUris.keys.joinToString()}")
+            
+            // 总是保存当前播放状态，即使为空
+            org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
             if (playingAudioUris.isNotEmpty()) {
-                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
-                Log.d(TAG, "保存最近播放的本地音频文件: ${playingAudioUris.keys.joinToString()}")
+                Log.d(TAG, "✓ 已保存最近播放的本地音频文件: ${playingAudioUris.keys.joinToString()}")
+            } else {
+                Log.d(TAG, "✓ 已清除最近播放的本地音频文件（当前没有正在播放的文件）")
             }
+            
+            Log.d(TAG, "========== 保存最近播放记录完成 ==========")
         } catch (e: Exception) {
             Log.e(TAG, "保存最近播放声音失败: ${e.message}")
+            e.printStackTrace()
         }
     }
     
@@ -1737,6 +1772,10 @@ class AudioManager private constructor() {
             
             // 通知服务播放状态已改变
             notifyServicePlayingStateChanged()
+            
+            // 关键修复：单个远程音频暂停后，保存当前正在播放的音频列表
+            // 这样可以确保最近播放只包含当前正在播放的音频
+            saveRecentPlayingSounds()
             
             Log.d(TAG, "$soundId 已暂停并释放播放器，保留元数据和音量")
         } catch (e: Exception) {

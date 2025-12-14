@@ -183,6 +183,14 @@ class LocalAudioPlayer private constructor() {
             playingQueue.remove(audioId)
             updatePlayingAudioIds()
             Log.d(TAG, "停止播放音频: $audioId, 剩余播放数: ${playingQueue.size}")
+            
+            // 关键修复：单个本地音频文件停止后，保存当前正在播放的音频列表
+            // 这样可以确保最近播放只包含当前正在播放的音频
+            try {
+                org.xmsleep.app.audio.AudioManager.getInstance().saveRecentPlayingSounds()
+            } catch (e: Exception) {
+                Log.e(TAG, "保存最近播放记录失败: ${e.message}")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "停止失败: audioId=$audioId", e)
         }
