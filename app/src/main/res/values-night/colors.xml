@@ -2,5 +2,11 @@
 <resources>
     <!-- Launcher icon background (Dark mode) -->
     <color name="launcher_background">#121212</color>
+    
+    <!-- Splash Screen 背景色 - 深色模式 -->
+    <color name="splash_background">#121212</color>
+    
+    <!-- Splash Screen 图标背景色 - 深色模式 -->
+    <color name="splash_icon_background">#1E1E1E</color>
 </resources>
 

@@ -249,4 +249,7 @@
     <string name="install_permission_hint">请在设置中允许安装来自此来源的应用，然后返回应用继续安装。</string>
     <string name="allowed_continue_install">我已允许，继续安装</string>
     <string name="import_failed">导入失败</string>
+    
+    <!-- 最近播放 -->
+    <string name="recent_play">最近播放</string>
 </resources>

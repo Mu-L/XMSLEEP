@@ -22,6 +22,10 @@ import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.common.MediaItem
 import org.xmsleep.app.R
 import org.xmsleep.app.service.MusicService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 全局音频管理器
@@ -96,6 +100,9 @@ class AudioManager private constructor() {
 
     private var applicationContext: Context? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    
+    // 蓝牙耳机管理器
+    private val bluetoothHeadsetManager = BluetoothHeadsetManager.getInstance()
     
     // MusicService 相关
     private var musicService: MusicService? = null
@@ -574,6 +581,8 @@ class AudioManager private constructor() {
         try {
             if (applicationContext == null) {
                 applicationContext = context.applicationContext
+                // 初始化蓝牙耳机监听器
+                initializeBluetoothHeadsetListener(context)
             }
 
             if (sound == Sound.NONE) {
@@ -769,6 +778,9 @@ class AudioManager private constructor() {
      */
     fun pauseAllSounds() {
         try {
+            // 保存最近播放的声音列表
+            saveRecentPlayingSounds()
+            
             // 暂停所有本地声音
             players.forEach { (sound, player) ->
                 try {
@@ -835,6 +847,9 @@ class AudioManager private constructor() {
     fun stopAllSounds() {
         try {
             Log.d(TAG, "开始停止所有声音...")
+            
+            // 在停止前保存最近播放的声音列表
+            saveRecentPlayingSounds()
             
             // 停止本地音频文件
             try {
@@ -986,15 +1001,141 @@ class AudioManager private constructor() {
      */
     fun releaseAllPlayers() {
         try {
+            // 在释放前保存最近播放的声音列表
+            saveRecentPlayingSounds()
+            
             players.keys.forEach { sound ->
                 releasePlayer(sound)
             }
             applicationContext?.let { abandonAudioFocus(it) }
+            
+            // 释放蓝牙耳机监听器
+            bluetoothHeadsetManager.release()
+            
             applicationContext = null
             Log.d(TAG, "已释放所有播放器资源")
         } catch (e: Exception) {
             Log.e(TAG, "释放所有播放器资源失败: ${e.message}")
         }
+    }
+    
+    /**
+     * 初始化蓝牙耳机监听器
+     */
+    private fun initializeBluetoothHeadsetListener(context: Context) {
+        try {
+            bluetoothHeadsetManager.initialize(context) {
+                // 蓝牙耳机断开时的回调
+                Log.d(TAG, "检测到蓝牙耳机断开，暂停所有音频")
+                pauseAllSounds()
+            }
+            Log.d(TAG, "蓝牙耳机监听器初始化成功")
+        } catch (e: Exception) {
+            Log.e(TAG, "初始化蓝牙耳机监听器失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 保存当前正在播放的声音列表（公开方法）
+     */
+    fun saveRecentPlayingSounds() {
+        try {
+            val context = applicationContext ?: return
+            
+            // 获取正在播放的本地声音
+            val playingLocalSounds = getPlayingSounds().map { it.name }
+            if (playingLocalSounds.isNotEmpty()) {
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalSounds(context, playingLocalSounds)
+                Log.d(TAG, "保存最近播放的本地声音: ${playingLocalSounds.joinToString()}")
+            }
+            
+            // 获取正在播放的远程声音
+            val playingRemoteSounds = getPlayingRemoteSoundIds()
+            if (playingRemoteSounds.isNotEmpty()) {
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
+                Log.d(TAG, "保存最近播放的远程声音: ${playingRemoteSounds.joinToString()}")
+            }
+            
+            // 获取正在播放的本地音频文件
+            val localAudioPlayer = LocalAudioPlayer.getInstance()
+            val playingAudioIds = localAudioPlayer.playingAudioIds.value.toList()
+            if (playingAudioIds.isNotEmpty()) {
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioIds)
+                Log.d(TAG, "保存最近播放的本地音频文件: ${playingAudioIds.joinToString()}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "保存最近播放声音失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 播放最近播放的声音
+     */
+    fun playRecentSounds(context: Context) {
+        try {
+            Log.d(TAG, "开始播放最近的声音...")
+            
+            // 获取最近播放的本地声音
+            val recentLocalSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalSounds(context)
+            Log.d(TAG, "最近播放的本地声音数量: ${recentLocalSounds.size}")
+            recentLocalSounds.forEach { soundName ->
+                try {
+                    val sound = Sound.valueOf(soundName)
+                    playSound(context, sound)
+                    Log.d(TAG, "成功播放最近的本地声音: $soundName")
+                } catch (e: Exception) {
+                    Log.e(TAG, "播放最近的本地声音 $soundName 失败: ${e.message}")
+                }
+            }
+            
+            // 获取最近播放的远程声音
+            val recentRemoteSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentRemoteSounds(context)
+            Log.d(TAG, "最近播放的远程声音数量: ${recentRemoteSounds.size}")
+            
+            // 使用协程异步加载远程声音
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                val resourceManager = org.xmsleep.app.audio.AudioResourceManager.getInstance(context)
+                recentRemoteSounds.forEach { soundId ->
+                    try {
+                        // 从 AudioResourceManager 获取元数据
+                        val metadata = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                            resourceManager.getSoundMetadata(soundId)
+                        }
+                        
+                        if (metadata != null) {
+                            // 获取 URI（优先使用缓存文件）
+                            val uri = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                                resourceManager.getSoundUri(metadata)
+                            }
+                            
+                            if (uri != null) {
+                                playRemoteSound(context, metadata, uri)
+                                Log.d(TAG, "成功播放最近的远程声音: $soundId")
+                            } else {
+                                Log.w(TAG, "无法播放最近的远程声音 $soundId：URI 为空")
+                            }
+                        } else {
+                            Log.w(TAG, "无法播放最近的远程声音 $soundId：元数据不存在")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "播放最近的远程声音 $soundId 失败: ${e.message}")
+                    }
+                }
+            }
+            
+            Log.d(TAG, "播放最近声音完成")
+        } catch (e: Exception) {
+            Log.e(TAG, "播放最近声音失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 检查是否有最近播放的声音
+     */
+    fun hasRecentSounds(context: Context): Boolean {
+        val recentLocalSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalSounds(context)
+        val recentRemoteSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentRemoteSounds(context)
+        return recentLocalSounds.isNotEmpty() || recentRemoteSounds.isNotEmpty()
     }
 
     /**
@@ -1132,6 +1273,8 @@ class AudioManager private constructor() {
         try {
             if (applicationContext == null) {
                 applicationContext = context.applicationContext
+                // 初始化蓝牙耳机监听器
+                initializeBluetoothHeadsetListener(context)
             }
             
             val soundId = metadata.id

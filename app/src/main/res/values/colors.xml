@@ -3,7 +3,10 @@
     <!-- Launcher icon background (Light mode) -->
     <color name="launcher_background">#FFFFFF</color>
     
-    <!-- Splash Screen 背景色 -->
+    <!-- Splash Screen 背景色 - 浅色模式 -->
     <color name="splash_background">#FFFFFF</color>
+    
+    <!-- Splash Screen 图标背景色 - 浅色模式 -->
+    <color name="splash_icon_background">#F5F5F5</color>
 </resources>
 

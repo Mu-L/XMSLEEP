@@ -767,6 +767,37 @@ fun MainScreen(
                 }
             }
         )
+        
+        // 最近播放弹窗 - 只在应用启动时显示一次
+        var showRecentPlayDialog by remember { mutableStateOf(false) }
+        var hasCheckedRecentPlay by remember { mutableStateOf(false) }
+        
+        // 只在应用启动时检查一次是否显示弹窗
+        LaunchedEffect(Unit) {
+            if (!hasCheckedRecentPlay) {
+                hasCheckedRecentPlay = true
+                val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+                // 检查是否有最近播放记录
+                if (audioManager.hasRecentSounds(context)) {
+                    // 延迟500ms显示，确保UI已完全加载
+                    delay(500)
+                    showRecentPlayDialog = true
+                }
+            }
+        }
+        
+        if (showRecentPlayDialog) {
+            org.xmsleep.app.ui.components.RecentPlayDialog(
+                onDismiss = {
+                    showRecentPlayDialog = false
+                },
+                onPlayRecent = {
+                    val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+                    audioManager.playRecentSounds(context)
+                    showRecentPlayDialog = false
+                }
+            )
+        }
         }
     }
     

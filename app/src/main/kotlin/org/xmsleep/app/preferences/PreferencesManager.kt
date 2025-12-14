@@ -38,6 +38,12 @@ object PreferencesManager {
     private const val KEY_ACTIVE_PRESET = "active_preset"
     // 本地音频收藏列表
     private const val KEY_LOCAL_AUDIO_FAVORITES = "local_audio_favorites"
+    // 最近播放的声音列表（本地声音）
+    private const val KEY_RECENT_LOCAL_SOUNDS = "recent_local_sounds"
+    // 最近播放的声音列表（远程声音）
+    private const val KEY_RECENT_REMOTE_SOUNDS = "recent_remote_sounds"
+    // 最近播放的本地音频文件列表
+    private const val KEY_RECENT_LOCAL_AUDIO_FILES = "recent_local_audio_files"
     
     /**
      * 从旧版本迁移数据（如果存在）
@@ -428,6 +434,55 @@ object PreferencesManager {
     fun getLocalAudioFavorites(context: Context): Set<String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getStringSet(KEY_LOCAL_AUDIO_FAVORITES, emptySet()) ?: emptySet()
+    }
+    
+    /**
+     * 保存最近播放的本地声音列表
+     */
+    fun saveRecentLocalSounds(context: Context, sounds: List<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_RECENT_LOCAL_SOUNDS, sounds.toSet()).apply()
+    }
+    
+    /**
+     * 获取最近播放的本地声音列表
+     */
+    fun getRecentLocalSounds(context: Context): List<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return (prefs.getStringSet(KEY_RECENT_LOCAL_SOUNDS, emptySet()) ?: emptySet()).toList()
+    }
+    
+    /**
+     * 保存最近播放的远程声音列表
+     */
+    fun saveRecentRemoteSounds(context: Context, soundIds: List<String>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_RECENT_REMOTE_SOUNDS, soundIds.toSet()).apply()
+    }
+    
+    /**
+     * 获取最近播放的远程声音列表
+     */
+    fun getRecentRemoteSounds(context: Context): List<String> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return (prefs.getStringSet(KEY_RECENT_REMOTE_SOUNDS, emptySet()) ?: emptySet()).toList()
+    }
+    
+    /**
+     * 保存最近播放的本地音频文件列表
+     */
+    fun saveRecentLocalAudioFiles(context: Context, audioIds: List<Long>) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putStringSet(KEY_RECENT_LOCAL_AUDIO_FILES, audioIds.map { it.toString() }.toSet()).apply()
+    }
+    
+    /**
+     * 获取最近播放的本地音频文件列表
+     */
+    fun getRecentLocalAudioFiles(context: Context): List<Long> {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return (prefs.getStringSet(KEY_RECENT_LOCAL_AUDIO_FILES, emptySet()) ?: emptySet())
+            .mapNotNull { it.toLongOrNull() }
     }
 }
 

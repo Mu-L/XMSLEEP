@@ -231,4 +231,7 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="added_to_favorite">Added to favorites</string>
     <string name="removed_from_favorite">Removed from favorites</string>
     <string name="scanning_local_audio">Scanning local audio files...</string>
+    
+    <!-- Recent Play -->
+    <string name="recent_play">Recent Play</string>
 </resources>

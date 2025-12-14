@@ -85,33 +85,59 @@ class LocalAudioPlayer private constructor() {
                 }
             }
             
+            // 立即更新状态，提供即时反馈
+            playingStates[audioId] = true
+            playingQueue.offer(audioId)
+            updatePlayingAudioIds()
+            
             // 创建新的 MediaPlayer
             val mediaPlayer = MediaPlayer().apply {
-                setDataSource(context, audioUri)
-                isLooping = true
-                val volume = volumeSettings[audioId] ?: _currentVolume.value
-                setVolume(volume, volume)
-                setOnPreparedListener {
-                    start()
-                    playingStates[audioId] = true
-                    playingQueue.offer(audioId)
-                    updatePlayingAudioIds()
-                    Log.d(TAG, "开始播放音频: $audioId, 当前播放数: ${playingQueue.size}")
-                }
-                setOnErrorListener { _, what, extra ->
-                    Log.e(TAG, "播放错误: audioId=$audioId, what=$what, extra=$extra")
-                    onError("播放失败")
+                try {
+                    setDataSource(context, audioUri)
+                    isLooping = true
+                    val volume = volumeSettings[audioId] ?: _currentVolume.value
+                    setVolume(volume, volume)
+                    
+                    setOnPreparedListener {
+                        try {
+                            start()
+                            Log.d(TAG, "音频准备完成并开始播放: $audioId, 当前播放数: ${playingQueue.size}")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "启动播放失败: audioId=$audioId", e)
+                            playingStates.remove(audioId)
+                            playingQueue.remove(audioId)
+                            updatePlayingAudioIds()
+                            onError("启动播放失败")
+                        }
+                    }
+                    
+                    setOnErrorListener { _, what, extra ->
+                        Log.e(TAG, "播放错误: audioId=$audioId, what=$what, extra=$extra")
+                        onError("播放失败")
+                        playingStates.remove(audioId)
+                        mediaPlayers.remove(audioId)
+                        playingQueue.remove(audioId)
+                        updatePlayingAudioIds()
+                        true
+                    }
+                    
+                    setOnCompletionListener {
+                        // 循环播放，不应该触发这个回调
+                        Log.d(TAG, "音频播放完成（不应该发生）: $audioId")
+                    }
+                    
+                    // 使用异步准备，避免阻塞UI
+                    prepareAsync()
+                    Log.d(TAG, "开始准备音频: $audioId（异步）")
+                    
+                } catch (e: Exception) {
+                    Log.e(TAG, "设置音频源失败: audioId=$audioId", e)
                     playingStates.remove(audioId)
-                    mediaPlayers.remove(audioId)
                     playingQueue.remove(audioId)
                     updatePlayingAudioIds()
-                    true
+                    onError("设置音频源失败: ${e.message}")
+                    throw e
                 }
-                setOnCompletionListener {
-                    // 循环播放，不应该触发这个回调
-                    Log.d(TAG, "音频播放完成（不应该发生）: $audioId")
-                }
-                prepareAsync()
             }
             
             mediaPlayers[audioId] = mediaPlayer

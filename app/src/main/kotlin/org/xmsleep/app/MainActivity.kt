@@ -81,6 +81,17 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    
+    override fun onStop() {
+        super.onStop()
+        // 应用进入后台时保存最近播放记录
+        try {
+            val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
+            audioManager.saveRecentPlayingSounds()
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "保存最近播放记录失败: ${e.message}")
+        }
+    }
 }
 
 /**

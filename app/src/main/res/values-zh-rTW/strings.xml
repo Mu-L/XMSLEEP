@@ -229,4 +229,7 @@
     <string name="added_to_favorite">已添加到收藏</string>
     <string name="removed_from_favorite">已取消收藏</string>
     <string name="scanning_local_audio">正在掃描本地音頻文件...</string>
+    
+    <!-- 最近播放 -->
+    <string name="recent_play">最近播放</string>
 </resources>
