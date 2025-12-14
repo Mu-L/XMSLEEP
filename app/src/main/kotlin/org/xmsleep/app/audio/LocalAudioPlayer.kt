@@ -39,6 +39,9 @@ class LocalAudioPlayer private constructor() {
     // 存储每个音频的音量设置（audioId -> volume）
     private val volumeSettings = ConcurrentHashMap<Long, Float>()
     
+    // 存储每个音频的 URI（audioId -> URI字符串），用于恢复播放
+    private val audioUriCache = ConcurrentHashMap<Long, String>()
+    
     // 播放顺序队列，用于限制最多同时播放的音频数量
     private val playingQueue = java.util.concurrent.ConcurrentLinkedQueue<Long>()
     
@@ -84,6 +87,9 @@ class LocalAudioPlayer private constructor() {
                     Log.d(TAG, "达到最大并发数，停止最早的音频: $oldestAudioId")
                 }
             }
+            
+            // 缓存 URI，用于恢复播放
+            audioUriCache[audioId] = audioUri.toString()
             
             // 立即更新状态，提供即时反馈
             playingStates[audioId] = true
@@ -254,6 +260,21 @@ class LocalAudioPlayer private constructor() {
      */
     fun getPlayingCount(): Int {
         return playingQueue.size
+    }
+    
+    /**
+     * 获取指定音频的 URI
+     */
+    fun getAudioUri(audioId: Long): Uri? {
+        return audioUriCache[audioId]?.let { Uri.parse(it) }
+    }
+    
+    /**
+     * 获取所有正在播放的音频的 URI 映射（audioId -> URI字符串）
+     */
+    fun getPlayingAudioUris(): Map<Long, String> {
+        val playingIds = playingAudioIds.value
+        return audioUriCache.filter { (audioId, _) -> playingIds.contains(audioId) }
     }
     
     /**

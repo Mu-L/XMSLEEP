@@ -469,20 +469,38 @@ object PreferencesManager {
     }
     
     /**
-     * 保存最近播放的本地音频文件列表
+     * 保存最近播放的本地音频文件列表（包含 URI 映射）
      */
-    fun saveRecentLocalAudioFiles(context: Context, audioIds: List<Long>) {
+    fun saveRecentLocalAudioFiles(context: Context, audioUriMap: Map<Long, String>) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit().putStringSet(KEY_RECENT_LOCAL_AUDIO_FILES, audioIds.map { it.toString() }.toSet()).apply()
+        // 将 Map 转换为 JSON 字符串保存
+        val jsonString = audioUriMap.entries.joinToString(";") { "${it.key}:${it.value}" }
+        prefs.edit().putString(KEY_RECENT_LOCAL_AUDIO_FILES, jsonString).apply()
     }
     
     /**
-     * 获取最近播放的本地音频文件列表
+     * 获取最近播放的本地音频文件列表（包含 URI 映射）
      */
-    fun getRecentLocalAudioFiles(context: Context): List<Long> {
+    fun getRecentLocalAudioFiles(context: Context): Map<Long, String> {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return (prefs.getStringSet(KEY_RECENT_LOCAL_AUDIO_FILES, emptySet()) ?: emptySet())
-            .mapNotNull { it.toLongOrNull() }
+        val jsonString = prefs.getString(KEY_RECENT_LOCAL_AUDIO_FILES, "") ?: ""
+        if (jsonString.isEmpty()) return emptyMap()
+        
+        return try {
+            jsonString.split(";")
+                .mapNotNull { entry ->
+                    val parts = entry.split(":", limit = 2)
+                    if (parts.size == 2) {
+                        val audioId = parts[0].toLongOrNull()
+                        val uri = parts[1]
+                        if (audioId != null) audioId to uri else null
+                    } else null
+                }
+                .toMap()
+        } catch (e: Exception) {
+            android.util.Log.e("PreferencesManager", "解析最近播放的本地音频文件失败: ${e.message}")
+            emptyMap()
+        }
     }
 }
 

@@ -1028,6 +1028,13 @@ class AudioManager private constructor() {
                 // 蓝牙耳机断开时的回调
                 Log.d(TAG, "检测到蓝牙耳机断开，暂停所有音频")
                 pauseAllSounds()
+                // 同时暂停本地音频文件
+                try {
+                    LocalAudioPlayer.getInstance().stopAllAudios()
+                    Log.d(TAG, "本地音频文件已暂停")
+                } catch (e: Exception) {
+                    Log.e(TAG, "暂停本地音频文件失败: ${e.message}")
+                }
             }
             Log.d(TAG, "蓝牙耳机监听器初始化成功")
         } catch (e: Exception) {
@@ -1056,12 +1063,12 @@ class AudioManager private constructor() {
                 Log.d(TAG, "保存最近播放的远程声音: ${playingRemoteSounds.joinToString()}")
             }
             
-            // 获取正在播放的本地音频文件
+            // 获取正在播放的本地音频文件（包含 URI 映射）
             val localAudioPlayer = LocalAudioPlayer.getInstance()
-            val playingAudioIds = localAudioPlayer.playingAudioIds.value.toList()
-            if (playingAudioIds.isNotEmpty()) {
-                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioIds)
-                Log.d(TAG, "保存最近播放的本地音频文件: ${playingAudioIds.joinToString()}")
+            val playingAudioUris = localAudioPlayer.getPlayingAudioUris()
+            if (playingAudioUris.isNotEmpty()) {
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
+                Log.d(TAG, "保存最近播放的本地音频文件: ${playingAudioUris.keys.joinToString()}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "保存最近播放声音失败: ${e.message}")
@@ -1123,6 +1130,25 @@ class AudioManager private constructor() {
                 }
             }
             
+            // 获取最近播放的本地音频文件（包含 URI 映射）
+            val recentLocalAudioFiles = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalAudioFiles(context)
+            Log.d(TAG, "最近播放的本地音频文件数量: ${recentLocalAudioFiles.size}")
+            
+            if (recentLocalAudioFiles.isNotEmpty()) {
+                val localAudioPlayer = LocalAudioPlayer.getInstance()
+                recentLocalAudioFiles.forEach { (audioId, uriString) ->
+                    try {
+                        val uri = android.net.Uri.parse(uriString)
+                        localAudioPlayer.playAudio(context, audioId, uri) { error ->
+                            Log.e(TAG, "播放最近的本地音频文件 $audioId 失败: $error")
+                        }
+                        Log.d(TAG, "成功播放最近的本地音频文件: $audioId")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "播放最近的本地音频文件 $audioId 失败: ${e.message}")
+                    }
+                }
+            }
+            
             Log.d(TAG, "播放最近声音完成")
         } catch (e: Exception) {
             Log.e(TAG, "播放最近声音失败: ${e.message}")
@@ -1135,7 +1161,8 @@ class AudioManager private constructor() {
     fun hasRecentSounds(context: Context): Boolean {
         val recentLocalSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalSounds(context)
         val recentRemoteSounds = org.xmsleep.app.preferences.PreferencesManager.getRecentRemoteSounds(context)
-        return recentLocalSounds.isNotEmpty() || recentRemoteSounds.isNotEmpty()
+        val recentLocalAudioFiles = org.xmsleep.app.preferences.PreferencesManager.getRecentLocalAudioFiles(context)
+        return recentLocalSounds.isNotEmpty() || recentRemoteSounds.isNotEmpty() || recentLocalAudioFiles.isNotEmpty()
     }
 
     /**
