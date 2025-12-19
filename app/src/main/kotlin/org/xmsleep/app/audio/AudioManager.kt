@@ -1055,6 +1055,9 @@ class AudioManager private constructor() {
     
     /**
      * 保存当前正在播放的声音列表（公开方法）
+     * 
+     * 关键逻辑：只有当有音频正在播放时才保存，否则保留之前的记录
+     * 这样可以确保用户停止所有音频后，最近播放记录不会被清空
      */
     fun saveRecentPlayingSounds() {
         try {
@@ -1067,27 +1070,10 @@ class AudioManager private constructor() {
             Log.d(TAG, "当前正在播放的本地声音数量: ${playingLocalSounds.size}")
             Log.d(TAG, "当前正在播放的本地声音列表: ${playingLocalSounds.joinToString()}")
             
-            // 关键修复：总是保存当前播放状态，即使为空
-            // 这样当用户停止所有音频时，最近播放列表会被正确清除
-            org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalSounds(context, playingLocalSounds)
-            if (playingLocalSounds.isNotEmpty()) {
-                Log.d(TAG, "✓ 已保存最近播放的本地声音: ${playingLocalSounds.joinToString()}")
-            } else {
-                Log.d(TAG, "✓ 已清除最近播放的本地声音（当前没有正在播放的声音）")
-            }
-            
             // 获取正在播放的远程声音
             val playingRemoteSounds = getPlayingRemoteSoundIds()
             Log.d(TAG, "当前正在播放的远程声音数量: ${playingRemoteSounds.size}")
             Log.d(TAG, "当前正在播放的远程声音列表: ${playingRemoteSounds.joinToString()}")
-            
-            // 总是保存当前播放状态，即使为空
-            org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
-            if (playingRemoteSounds.isNotEmpty()) {
-                Log.d(TAG, "✓ 已保存最近播放的远程声音: ${playingRemoteSounds.joinToString()}")
-            } else {
-                Log.d(TAG, "✓ 已清除最近播放的远程声音（当前没有正在播放的声音）")
-            }
             
             // 获取正在播放的本地音频文件（包含 URI 映射）
             val localAudioPlayer = LocalAudioPlayer.getInstance()
@@ -1095,12 +1081,25 @@ class AudioManager private constructor() {
             Log.d(TAG, "当前正在播放的本地音频文件数量: ${playingAudioUris.size}")
             Log.d(TAG, "当前正在播放的本地音频文件ID列表: ${playingAudioUris.keys.joinToString()}")
             
-            // 总是保存当前播放状态，即使为空
-            org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
-            if (playingAudioUris.isNotEmpty()) {
-                Log.d(TAG, "✓ 已保存最近播放的本地音频文件: ${playingAudioUris.keys.joinToString()}")
+            // 关键修复：只有当有任何音频正在播放时才保存
+            // 如果所有音频都停止了，保留之前的记录，不覆盖为空
+            val hasAnyPlaying = playingLocalSounds.isNotEmpty() || 
+                               playingRemoteSounds.isNotEmpty() || 
+                               playingAudioUris.isNotEmpty()
+            
+            if (hasAnyPlaying) {
+                // 有音频正在播放，保存当前状态
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalSounds(context, playingLocalSounds)
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentRemoteSounds(context, playingRemoteSounds)
+                org.xmsleep.app.preferences.PreferencesManager.saveRecentLocalAudioFiles(context, playingAudioUris)
+                
+                Log.d(TAG, "✓ 已保存最近播放记录:")
+                Log.d(TAG, "  - 本地声音: ${playingLocalSounds.joinToString().ifEmpty { "无" }}")
+                Log.d(TAG, "  - 远程声音: ${playingRemoteSounds.joinToString().ifEmpty { "无" }}")
+                Log.d(TAG, "  - 本地音频文件: ${playingAudioUris.keys.joinToString().ifEmpty { "无" }}")
             } else {
-                Log.d(TAG, "✓ 已清除最近播放的本地音频文件（当前没有正在播放的文件）")
+                // 没有音频正在播放，保留之前的记录
+                Log.d(TAG, "✓ 当前没有正在播放的音频，保留之前的最近播放记录")
             }
             
             Log.d(TAG, "========== 保存最近播放记录完成 ==========")
