@@ -64,7 +64,9 @@ class AudioManager private constructor() {
         CAMPFIRE,
         WIND,
         KEYBOARD,
-        SNOW_WALKING
+        SNOW_WALKING,
+        MORNING_COFFEE,
+        WINDMILL
     }
     
     // 网络音频播放器（使用soundId作为key）
@@ -147,7 +149,9 @@ class AudioManager private constructor() {
         Sound.CAMPFIRE to DEFAULT_VOLUME,
         Sound.WIND to DEFAULT_VOLUME,
         Sound.KEYBOARD to DEFAULT_VOLUME,
-        Sound.SNOW_WALKING to DEFAULT_VOLUME
+        Sound.SNOW_WALKING to DEFAULT_VOLUME,
+        Sound.MORNING_COFFEE to DEFAULT_VOLUME,
+        Sound.WINDMILL to DEFAULT_VOLUME
     )
     
     // 音频焦点管理
@@ -573,6 +577,24 @@ class AudioManager private constructor() {
         )
     }
 
+    private fun prepareMorningCoffeeSound(context: Context, sound: Sound) {
+        prepareSoundAudio(
+            context, sound,
+            R.raw.morning_coffee,
+            0L, 0L,
+            "早晨咖啡"
+        )
+    }
+
+    private fun prepareWindmillSound(context: Context, sound: Sound) {
+        prepareSoundAudio(
+            context, sound,
+            R.raw.windmill,
+            0L, 0L,
+            "风车"
+        )
+    }
+
     /**
      * 播放指定类型的声音
      */
@@ -679,6 +701,8 @@ class AudioManager private constructor() {
                     Sound.WIND -> prepareWindSound(context, sound)
                     Sound.KEYBOARD -> prepareKeyboardSound(context, sound)
                     Sound.SNOW_WALKING -> prepareSnowWalkingSound(context, sound)
+                    Sound.MORNING_COFFEE -> prepareMorningCoffeeSound(context, sound)
+                    Sound.WINDMILL -> prepareWindmillSound(context, sound)
                     else -> {
                         Log.e(TAG, "未知的声音类型: ${sound.name}")
                         return

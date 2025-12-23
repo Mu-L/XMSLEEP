@@ -480,6 +480,20 @@ fun SoundsScreen(
                 context.getString(R.string.sound_office),
                 R.drawable.office,
                 colorScheme.secondary
+            ),
+            // 15. 早晨咖啡
+            SoundItem(
+                AudioManager.Sound.MORNING_COFFEE,
+                context.getString(R.string.sound_morning_coffee),
+                R.drawable.morning_coffee,
+                colorScheme.primaryContainer
+            ),
+            // 16. 风车
+            SoundItem(
+                AudioManager.Sound.WINDMILL,
+                context.getString(R.string.sound_windmill),
+                R.drawable.windmill,
+                colorScheme.tertiaryContainer
             )
         )
     }
