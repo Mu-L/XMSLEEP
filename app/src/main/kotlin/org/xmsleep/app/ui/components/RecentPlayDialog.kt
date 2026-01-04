@@ -28,6 +28,7 @@ import org.xmsleep.app.audio.AudioManager
 /**
  * 最近播放弹窗
  * 在应用启动时显示，提示用户可以快速播放上次的音频
+ * 注意：只显示提示，不自动播放
  */
 @Composable
 fun RecentPlayDialog(
@@ -84,6 +85,7 @@ fun RecentPlayDialog(
                 .fillMaxSize()
                 .clickable(
                     onClick = {
+                        // 点击背景直接关闭，不播放
                         visible = false
                     },
                     indication = null,
@@ -101,6 +103,7 @@ fun RecentPlayDialog(
                     )
                     .clickable(
                         onClick = {
+                            // 点击卡片播放最近的音频
                             onPlayRecent()
                             visible = false
                         },
@@ -139,11 +142,18 @@ fun RecentPlayDialog(
                     }
                     
                     // 文字
-                    Text(
-                        text = stringResource(R.string.recent_play),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.recent_play),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.tap_to_play),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
         }

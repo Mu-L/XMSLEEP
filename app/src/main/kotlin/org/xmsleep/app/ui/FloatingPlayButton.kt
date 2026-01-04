@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -20,16 +21,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,19 +50,21 @@ import org.xmsleep.app.R
 import org.xmsleep.app.audio.AudioManager
 import org.xmsleep.app.audio.AudioResourceManager
 import org.xmsleep.app.audio.model.SoundMetadata
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 /**
  * 全局浮动播放按钮组件 - 重构版
  * 
  * 功能特性：
- * - 固定在屏幕左侧中央
- * - 默认收起状态（20dp 窄条，无箭头，有呼吸动画）
+ * - 可拖动，松手后自动吸附到左右边缘
+ * - 默认收起状态（20dp 窄条，带三角图标，有呼吸动画）
  * - 点击展开播放列表（280dp）
  * - 展开时显示所有正在播放的音频，支持滚动
  * - 显示正在播放的音频及音量控制
  * - 支持单个停止和全部停止
  * - 滑动页面或切换 tab 自动收起
+ * - 记住用户的位置偏好
  * 
  * @param audioManager 音频管理器
  * @param onSoundClick 点击音频回调
@@ -105,10 +115,60 @@ fun FloatingPlayButtonNew(
     val haptic = LocalHapticFeedback.current
     val scope = rememberCoroutineScope()
     val isDarkTheme = isSystemInDarkTheme()
+    val density = LocalDensity.current
+    
+    // 尺寸配置（需要在使用前定义）
+    val collapsedWidth = 32.dp      // 收起时的宽度（增加到32dp，更容易点击）
+    val expandedWidth = 230.dp       // 展开时的宽度
+    val buttonHeight = 80.dp         // 最小高度
     
     // 按钮状态
     var isExpanded by remember { mutableStateOf(false) }
     var showStopAllDialog by remember { mutableStateOf(false) }
+    
+    // 拖动状态
+    var isDragging by remember { mutableStateOf(false) }
+    var offsetX by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { 
+        val savedY = org.xmsleep.app.preferences.PreferencesManager.getFloatingButtonY(context)
+        mutableFloatStateOf(
+            if (savedY < 0f) {
+                // 首次使用，默认居中
+                with(density) { (screenHeight / 2 - buttonHeight / 2).toPx() }
+            } else {
+                savedY
+            }
+        ) 
+    }
+    var isOnLeft by remember { 
+        mutableStateOf(
+            org.xmsleep.app.preferences.PreferencesManager.getFloatingButtonIsLeft(context)
+        ) 
+    }
+    
+    // 初始化offsetX
+    LaunchedEffect(Unit) {
+        offsetX = if (isOnLeft) 0f else with(density) { screenWidth.toPx() }
+    }
+    
+    // 动画偏移值（用于吸附动画）
+    val animatedOffsetX by animateFloatAsState(
+        targetValue = offsetX,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "offsetX"
+    )
+    
+    val animatedOffsetY by animateFloatAsState(
+        targetValue = offsetY,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "offsetY"
+    )
     
     // 监听强制收缩参数
     LaunchedEffect(forceCollapse) {
@@ -224,11 +284,6 @@ fun FloatingPlayButtonNew(
         return
     }
     
-    // 尺寸配置
-    val collapsedWidth = 20.dp      // 收起时的宽度（窄条，无箭头）
-    val expandedWidth = 230.dp       // 展开时的宽度
-    val buttonHeight = 80.dp         // 最小高度
-    
     // 动态高度计算
     val minHeight = 240.dp           // 最小高度（单个音频时）
     val maxHeight = 460.dp           // 最大高度（多个音频时）
@@ -303,129 +358,214 @@ fun FloatingPlayButtonNew(
     }
     val expandedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
     
-    // 固定位置：屏幕最左侧中央
+    // 计算按钮位置
     val arrowWidth = 40.dp
-    val fixedX = 0.dp // 吸附到最左侧边缘
-    val fixedY = (screenHeight - height) / 2
+    val buttonHeightPx = with(density) { buttonHeight.toPx() }
+    val screenHeightPx = with(density) { screenHeight.toPx() }
+    val screenWidthPx = with(density) { screenWidth.toPx() }
+    
+    // 计算展开内容的高度（用于判断是否需要调整位置）
+    val contentHeightPx = with(density) { contentHeight.toPx() }
+    
+    // 限制Y轴范围（确保按钮不会超出屏幕）
+    val minY = 0f
+    val maxY = screenHeightPx - buttonHeightPx
+    val clampedY = offsetY.coerceIn(minY, maxY)
+    
+    // 展开时，如果内容会超出屏幕底部，则向上调整位置
+    val adjustedY = if (isExpanded) {
+        val bottomEdge = clampedY + contentHeightPx
+        if (bottomEdge > screenHeightPx) {
+            // 内容会超出屏幕，向上调整
+            (screenHeightPx - contentHeightPx).coerceAtLeast(0f)
+        } else {
+            clampedY
+        }
+    } else {
+        clampedY
+    }
+    
+    // 计算最终位置
+    val finalX = if (isOnLeft) 0f else screenWidthPx
+    val finalY = adjustedY
     
     Box(
         modifier = Modifier
             .fillMaxSize()
             .zIndex(100f) // 确保在最上层
     ) {
-        // 展开时：内容在左，箭头在右（各自独立投影）
+        // 展开时：内容和箭头按钮
         if (isExpanded) {
             Row(
                 modifier = Modifier
-                    .offset { IntOffset(fixedX.roundToPx(), fixedY.roundToPx()) }
+                    .offset { 
+                        IntOffset(
+                            if (isOnLeft) {
+                                animatedOffsetX.roundToInt()
+                            } else {
+                                (animatedOffsetX - with(density) { (expandedWidth + arrowWidth).toPx() }).roundToInt()
+                            },
+                            adjustedY.roundToInt() // 使用调整后的Y坐标
+                        ) 
+                    }
                     .height(height),
                 horizontalArrangement = Arrangement.spacedBy(0.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 左侧内容区域（展开的播放列表，独立投影）
-                Box(
-                    modifier = Modifier
-                        .width(expandedWidth)
-                        .fillMaxHeight()
-                        .shadow(
-                            elevation = 8.dp,
-                            shape = RoundedCornerShape(
-                                topStart = 0.dp,
-                                bottomStart = 0.dp,
-                                topEnd = 16.dp,
-                                bottomEnd = 16.dp
-                            )
-                        )
-                        .background(
-                            color = expandedContainerColor,
-                            shape = RoundedCornerShape(
-                                topStart = 0.dp,
-                                bottomStart = 0.dp,
-                                topEnd = 16.dp,
-                                bottomEnd = 16.dp
-                            )
-                        )
-                ) {
-                    ExpandedPlayingList(
-                        playingSounds = allPlayingSounds,
+                // 根据位置调整顺序
+                if (isOnLeft) {
+                    // 左侧：内容在左，箭头在右
+                    ExpandedContent(
+                        expandedWidth = expandedWidth,
+                        expandedContainerColor = expandedContainerColor,
+                        expandedContentColor = expandedContentColor,
+                        allPlayingSounds = allPlayingSounds,
                         audioManager = audioManager,
                         onCollapse = { isExpanded = false },
                         onStopAll = { showStopAllDialog = true },
                         onAddToPreset = onAddToPreset,
-                        contentColor = expandedContentColor,
-                        containerColor = expandedContainerColor
+                        isOnLeft = isOnLeft
                     )
-                }
-                
-                // 右侧箭头按钮（只占中间高度 buttonHeight，展开时无投影）
-                Box(
-                    modifier = Modifier
-                        .width(arrowWidth)
-                        .height(buttonHeight)
-                        .background(
-                            color = buttonContainerColor,
-                            shape = RoundedCornerShape(
-                                topStart = 0.dp,
-                                bottomStart = 0.dp,
-                                topEnd = 20.dp,
-                                bottomEnd = 20.dp
-                            )
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { 
-                                isExpanded = false
-                                onExpandStateChange(false) // 通知收缩状态变化
-                            }
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ChevronLeft,
-                        contentDescription = stringResource(R.string.collapse),
-                        tint = buttonContentColor,
-                        modifier = Modifier.size(28.dp)
+                    
+                    ArrowButton(
+                        arrowWidth = arrowWidth,
+                        buttonHeight = buttonHeight,
+                        buttonContainerColor = buttonContainerColor,
+                        buttonContentColor = buttonContentColor,
+                        isOnLeft = isOnLeft,
+                        onClick = { 
+                            isExpanded = false
+                            onExpandStateChange(false)
+                        }
+                    )
+                } else {
+                    // 右侧：箭头在左，内容在右
+                    ArrowButton(
+                        arrowWidth = arrowWidth,
+                        buttonHeight = buttonHeight,
+                        buttonContainerColor = buttonContainerColor,
+                        buttonContentColor = buttonContentColor,
+                        isOnLeft = isOnLeft,
+                        onClick = { 
+                            isExpanded = false
+                            onExpandStateChange(false)
+                        }
+                    )
+                    
+                    ExpandedContent(
+                        expandedWidth = expandedWidth,
+                        expandedContainerColor = expandedContainerColor,
+                        expandedContentColor = expandedContentColor,
+                        allPlayingSounds = allPlayingSounds,
+                        audioManager = audioManager,
+                        onCollapse = { isExpanded = false },
+                        onStopAll = { showStopAllDialog = true },
+                        onAddToPreset = onAddToPreset,
+                        isOnLeft = isOnLeft
                     )
                 }
             }
         } else {
-            // 收起时：只显示箭头（应用呼吸动画到整个容器）
+            // 收起时：显示窄条 + 三角图标
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(fixedX.roundToPx(), fixedY.roundToPx()) }
-                    .scale(breatheScale) // 整个容器应用呼吸效果
+                    .offset { 
+                        IntOffset(
+                            if (isOnLeft) {
+                                animatedOffsetX.roundToInt()
+                            } else {
+                                (animatedOffsetX - with(density) { collapsedWidth.toPx() }).roundToInt()
+                            },
+                            animatedOffsetY.roundToInt()
+                        ) 
+                    }
+                    .scale(if (isDragging) 1.1f else breatheScale) // 拖动时放大，否则呼吸效果
+                    .alpha(if (isDragging) 1f else 0.38f) // 拖动时不透明，静止时38%透明度
                     .width(width)
                     .height(height)
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(
-                            topStart = 0.dp,
-                            bottomStart = 0.dp,
-                            topEnd = 20.dp,
-                            bottomEnd = 20.dp
-                        )
+                    // 只在拖动时显示投影，静止时无投影（避免透明度下的视觉冲突）
+                    .then(
+                        if (isDragging) {
+                            Modifier.shadow(
+                                elevation = 12.dp,
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                        } else {
+                            Modifier
+                        }
                     )
                     .background(
                         color = buttonContainerColor,
-                        shape = RoundedCornerShape(
-                            topStart = 0.dp,
-                            bottomStart = 0.dp,
-                            topEnd = 20.dp,
-                            bottomEnd = 20.dp
-                        )
+                        shape = if (isDragging) {
+                            // 拖动时：矩形
+                            RoundedCornerShape(8.dp)
+                        } else {
+                            // 静止时：根据位置调整圆角
+                            RoundedCornerShape(
+                                topStart = if (isOnLeft) 0.dp else 20.dp,
+                                bottomStart = if (isOnLeft) 0.dp else 20.dp,
+                                topEnd = if (isOnLeft) 20.dp else 0.dp,
+                                bottomEnd = if (isOnLeft) 20.dp else 0.dp
+                            )
+                        }
                     )
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        isExpanded = true
-                        onExpandStateChange(true) // 通知展开状态变化
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = {
+                                isDragging = true
+                            },
+                            onDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetX += dragAmount.x
+                                offsetY += dragAmount.y
+                            },
+                            onDragEnd = {
+                                isDragging = false
+                                
+                                // 判断吸附到哪一侧
+                                val centerX = offsetX + with(density) { collapsedWidth.toPx() } / 2
+                                val shouldBeOnLeft = centerX < screenWidthPx / 2
+                                
+                                // 吸附到边缘
+                                isOnLeft = shouldBeOnLeft
+                                offsetX = if (shouldBeOnLeft) 0f else screenWidthPx
+                                
+                                // 限制Y轴范围
+                                offsetY = offsetY.coerceIn(minY, maxY)
+                                
+                                // 保存位置偏好
+                                org.xmsleep.app.preferences.PreferencesManager.saveFloatingButtonPosition(
+                                    context,
+                                    offsetY,
+                                    isOnLeft
+                                )
+                                
+                                // 震动反馈
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+                        )
                     }
-                )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            if (!isDragging) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                isExpanded = true
+                                onExpandStateChange(true) // 通知展开状态变化
+                            }
+                        }
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                // 收起状态：空的窄条，只有呼吸动画
+                // 收起状态：显示三角图标（使用 CustomChevronIcon）
+                // 拖动时也显示图标，根据位置显示对应方向
+                CustomChevronIcon(
+                    isExpanded = isOnLeft, // 左侧时指向右（false变true），右侧时指向左（true变false）
+                    color = buttonContentColor.copy(alpha = 0.6f),
+                    modifier = Modifier.size(20.dp),
+                    direction = ChevronDirection.HORIZONTAL
+                )
             }
         }
     }
@@ -850,5 +990,132 @@ private fun FloatingPlayItemView(
                 textAlign = TextAlign.End
             )
         }
+    }
+}
+
+
+/**
+ * 自定义三角图标（用于悬浮播放按钮）
+ * 简化版的 CustomChevronIcon，用于指示展开方向
+ */
+@Composable
+private fun CustomChevronIcon(
+    isExpanded: Boolean,
+    isOnLeft: Boolean,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    androidx.compose.foundation.Canvas(modifier = modifier) {
+        val path = Path().apply {
+            if (isOnLeft) {
+                // 左侧：指向右的三角形
+                moveTo(size.width * 0.3f, size.height * 0.2f)
+                lineTo(size.width * 0.7f, size.height * 0.5f)
+                lineTo(size.width * 0.3f, size.height * 0.8f)
+            } else {
+                // 右侧：指向左的三角形
+                moveTo(size.width * 0.7f, size.height * 0.2f)
+                lineTo(size.width * 0.3f, size.height * 0.5f)
+                lineTo(size.width * 0.7f, size.height * 0.8f)
+            }
+        }
+        
+        // 绘制描边三角形
+        drawPath(
+            path = path,
+            color = color,
+            style = Stroke(width = 2.dp.toPx())
+        )
+    }
+}
+
+/**
+ * 展开内容区域组件
+ */
+@Composable
+private fun ExpandedContent(
+    expandedWidth: Dp,
+    expandedContainerColor: Color,
+    expandedContentColor: Color,
+    allPlayingSounds: List<FloatingPlayItem>,
+    audioManager: AudioManager,
+    onCollapse: () -> Unit,
+    onStopAll: () -> Unit,
+    onAddToPreset: (localSounds: List<AudioManager.Sound>, remoteSoundIds: List<String>) -> Unit,
+    isOnLeft: Boolean
+) {
+    Box(
+        modifier = Modifier
+            .width(expandedWidth)
+            .fillMaxHeight()
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(
+                    topStart = if (isOnLeft) 0.dp else 16.dp,
+                    bottomStart = if (isOnLeft) 0.dp else 16.dp,
+                    topEnd = if (isOnLeft) 16.dp else 0.dp,
+                    bottomEnd = if (isOnLeft) 16.dp else 0.dp
+                )
+            )
+            .background(
+                color = expandedContainerColor,
+                shape = RoundedCornerShape(
+                    topStart = if (isOnLeft) 0.dp else 16.dp,
+                    bottomStart = if (isOnLeft) 0.dp else 16.dp,
+                    topEnd = if (isOnLeft) 16.dp else 0.dp,
+                    bottomEnd = if (isOnLeft) 16.dp else 0.dp
+                )
+            )
+    ) {
+        ExpandedPlayingList(
+            playingSounds = allPlayingSounds,
+            audioManager = audioManager,
+            onCollapse = onCollapse,
+            onStopAll = onStopAll,
+            onAddToPreset = onAddToPreset,
+            contentColor = expandedContentColor,
+            containerColor = expandedContainerColor
+        )
+    }
+}
+
+/**
+ * 箭头按钮组件
+ */
+@Composable
+private fun ArrowButton(
+    arrowWidth: Dp,
+    buttonHeight: Dp,
+    buttonContainerColor: Color,
+    buttonContentColor: Color,
+    isOnLeft: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .width(arrowWidth)
+            .height(buttonHeight)
+            .background(
+                color = buttonContainerColor,
+                shape = RoundedCornerShape(
+                    topStart = if (isOnLeft) 0.dp else 20.dp,
+                    bottomStart = if (isOnLeft) 0.dp else 20.dp,
+                    topEnd = if (isOnLeft) 20.dp else 0.dp,
+                    bottomEnd = if (isOnLeft) 20.dp else 0.dp
+                )
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (isOnLeft) Icons.Default.ChevronLeft else Icons.Default.ChevronRight,
+            contentDescription = stringResource(R.string.collapse),
+            tint = buttonContentColor,
+            modifier = Modifier.size(28.dp)
+        )
     }
 }

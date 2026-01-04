@@ -513,8 +513,9 @@ fun SoundsScreen(
         )
     }
     
-    // 初始化状态
+    // 初始化状态（只读取状态，不停止播放）
     LaunchedEffect(Unit) {
+        // 初始化播放状态为实际播放状态
         soundItems.forEach { item ->
             playingStates[item.sound] = audioManager.isPlayingSound(item.sound)
         }
@@ -3204,11 +3205,16 @@ fun EmptyStateAnimation(
  * 向上时：V形，开口向上
  * 向下时：V形，开口向下（旋转180度）
  */
+/**
+ * 自定义箭头图标
+ * 支持四个方向：上、下、左、右
+ */
 @Composable
 fun CustomChevronIcon(
     isExpanded: Boolean,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    direction: ChevronDirection = ChevronDirection.VERTICAL
 ) {
     Canvas(modifier = modifier) {
         // SVG 原始路径数据（向上箭头）
@@ -3324,19 +3330,22 @@ fun CustomChevronIcon(
             close()
         }
         
-        // 如果需要向下箭头，旋转180度
+        // 根据方向和状态旋转箭头
         val centerX = size.width / 2
         val centerY = size.height / 2
         
+        val rotationAngle = when (direction) {
+            ChevronDirection.VERTICAL -> if (isExpanded) 180f else 0f  // 上/下
+            ChevronDirection.HORIZONTAL -> if (isExpanded) 90f else -90f  // 右/左
+        }
+        
         // 绘制填充路径（适配颜色）
-        if (isExpanded) {
-            // 向下箭头：旋转180度（通过缩放-1实现）
-            // 使用 Matrix 进行旋转，变换操作是反向的
+        if (rotationAngle != 0f) {
+            // 需要旋转
             val matrix = androidx.compose.ui.graphics.Matrix().apply {
                 reset()
-                // 按相反顺序应用变换：先平移回中心，然后缩放-1，最后平移到原点
                 translate(centerX, centerY)
-                scale(-1f, -1f)
+                rotateZ(rotationAngle)
                 translate(-centerX, -centerY)
             }
             
@@ -3355,5 +3364,13 @@ fun CustomChevronIcon(
             )
         }
     }
+}
+
+/**
+ * 箭头方向枚举
+ */
+enum class ChevronDirection {
+    VERTICAL,    // 垂直方向（上/下）
+    HORIZONTAL   // 水平方向（左/右）
 }
 

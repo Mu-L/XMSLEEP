@@ -317,6 +317,17 @@ object PreferencesManager {
     }
     
     /**
+     * 保存浮动按钮位置（简化版，只保存Y和isLeft）
+     */
+    fun saveFloatingButtonPosition(context: Context, y: Float, isLeft: Boolean) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putFloat(KEY_FLOATING_BUTTON_Y, y)
+            .putBoolean(KEY_FLOATING_BUTTON_IS_LEFT, isLeft)
+            .apply()
+    }
+    
+    /**
      * 获取浮动按钮位置
      */
     fun getFloatingButtonPosition(context: Context, defaultX: Float, defaultY: Float, defaultIsLeft: Boolean): Triple<Float, Float, Boolean> {
@@ -325,6 +336,23 @@ object PreferencesManager {
         val y = prefs.getFloat(KEY_FLOATING_BUTTON_Y, defaultY)
         val isLeft = prefs.getBoolean(KEY_FLOATING_BUTTON_IS_LEFT, defaultIsLeft)
         return Triple(x, y, isLeft)
+    }
+    
+    /**
+     * 获取浮动按钮Y位置
+     */
+    fun getFloatingButtonY(context: Context): Float {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        // 默认值为屏幕中央（使用负数表示需要计算）
+        return prefs.getFloat(KEY_FLOATING_BUTTON_Y, -1f)
+    }
+    
+    /**
+     * 获取浮动按钮是否在左侧
+     */
+    fun getFloatingButtonIsLeft(context: Context): Boolean {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getBoolean(KEY_FLOATING_BUTTON_IS_LEFT, true) // 默认在左侧
     }
     
     /**
