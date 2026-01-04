@@ -31,6 +31,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.SwipeRefreshIndicator
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.xmsleep.app.R
@@ -93,6 +96,10 @@ fun StarSkyScreen(
         mutableStateOf(org.xmsleep.app.preferences.PreferencesManager.getPresetRemotePinned(context, activePreset).toMutableSet()) 
     }
     
+    // 下拉刷新状态
+    var isRefreshing by remember { mutableStateOf(false) }
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
+    
     // 调试模式：记录加载日志
     var debugLogs by remember { mutableStateOf<List<String>>(emptyList()) }
     var showDebugPanel by remember { mutableStateOf(false) }
@@ -101,6 +108,31 @@ fun StarSkyScreen(
     val addDebugLog: (String) -> Unit = { message ->
         val timestamp = java.text.SimpleDateFormat("HH:mm:ss.SSS").format(java.util.Date())
         debugLogs = debugLogs + "[$timestamp] $message"
+    }
+    
+    // 刷新函数
+    val refreshData: () -> Unit = {
+        scope.launch {
+            isRefreshing = true
+            addDebugLog("→ 用户触发下拉刷新...")
+            try {
+                val manifest = resourceManager.refreshRemoteManifest().getOrNull()
+                if (manifest != null) {
+                    remoteSounds = manifest.sounds
+                    remoteCategories = manifest.categories
+                    addDebugLog("✓ 刷新成功，分类数: ${manifest.categories.size}，音频数: ${manifest.sounds.size}")
+                    Toast.makeText(context, context.getString(R.string.refresh_success), Toast.LENGTH_SHORT).show()
+                } else {
+                    addDebugLog("⚠ 刷新返回 null")
+                    Toast.makeText(context, context.getString(R.string.refresh_failed), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                addDebugLog("✗ 刷新失败: ${e.message}")
+                Toast.makeText(context, context.getString(R.string.refresh_failed) + ": ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                isRefreshing = false
+            }
+        }
     }
     
     // 监听 activePreset 变化，重新加载对应的远程音频固定状态
@@ -468,6 +500,20 @@ fun StarSkyScreen(
         }
         // 音频列表
         else if (remoteSounds.isNotEmpty()) {
+            SwipeRefresh(
+                state = swipeRefreshState,
+                onRefresh = refreshData,
+                modifier = Modifier.weight(1f),
+                indicator = { state, trigger ->
+                    SwipeRefreshIndicator(
+                        state = state,
+                        refreshTriggerDistance = trigger,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        backgroundColor = MaterialTheme.colorScheme.surface
+                    )
+                }
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
             // 构建所有分类列表（包括"全部"）
             val allCategories = remember(categoryIds) { listOf(null) + categoryIds }
             
@@ -893,6 +939,8 @@ fun StarSkyScreen(
                         )
                     }
                 }
+                }
+            }
                 }
             }
         }

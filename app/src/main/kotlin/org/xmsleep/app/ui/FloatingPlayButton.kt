@@ -480,7 +480,7 @@ fun FloatingPlayButtonNew(
                         ) 
                     }
                     .scale(if (isDragging) 1.1f else breatheScale) // 拖动时放大，否则呼吸效果
-                    .alpha(if (isDragging) 1f else 0.38f) // 拖动时不透明，静止时38%透明度
+                    .alpha(if (isDragging) 1f else 0.40f) // 拖动时不透明，静止时40%透明度
                     .width(width)
                     .height(height)
                     // 只在拖动时显示投影，静止时无投影（避免透明度下的视觉冲突）

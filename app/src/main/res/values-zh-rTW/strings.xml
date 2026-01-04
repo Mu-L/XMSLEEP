@@ -235,4 +235,6 @@
     <!-- 最近播放 -->
     <string name="recent_play">最近播放</string>
     <string name="tap_to_play">點擊播放</string>
+    <string name="refresh_success">刷新成功</string>
+    <string name="refresh_failed">刷新失敗</string>
 </resources>

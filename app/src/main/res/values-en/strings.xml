@@ -237,4 +237,6 @@ If you have any questions, please contact us through the in-app contact method.<
     <!-- Recent Play -->
     <string name="recent_play">Recent Play</string>
     <string name="tap_to_play">Tap to Play</string>
+    <string name="refresh_success">Refresh Successful</string>
+    <string name="refresh_failed">Refresh Failed</string>
 </resources>
