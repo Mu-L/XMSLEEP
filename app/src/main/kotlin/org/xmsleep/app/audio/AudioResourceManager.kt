@@ -47,17 +47,55 @@ class AudioResourceManager private constructor(context: Context) {
     }
     
     /**
-     * 初始化时操作：不存在持久化缓存時，从 assets 加载默认数据
+     * 初始化时操作：从 assets 加载默认数据，并检查版本更新
      */
     fun initializeDefaultManifest() {
         try {
-            // 如果持久化缓存不存在，从 assets 文件加载默认数据
+            // 从 assets 读取最新清单
+            val assetsJson = appContext.assets.open("sounds_remote.json").use { inputStream ->
+                inputStream.bufferedReader().use { it.readText() }
+            }
+            
+            // 解析 assets 清单获取版本和音频数量
+            val assetsManifest = gson.fromJson(assetsJson, SoundsManifest::class.java)
+            val assetsVersion = assetsManifest.version
+            val assetsSoundCount = assetsManifest.sounds.size
+            
+            // 检查是否需要更新缓存
+            var needUpdate = false
+            
             if (!manifestCacheFile.exists()) {
-                appContext.assets.open("sounds_remote.json").use { inputStream ->
-                    val json = inputStream.bufferedReader().use { it.readText() }
-                    manifestCacheFile.writeText(json)
-                    Log.d(TAG, "从 assets 中加载默认清单")
+                // 缓存不存在，需要创建
+                needUpdate = true
+                Log.d(TAG, "持久化缓存不存在，从 assets 初始化")
+            } else {
+                // 缓存存在，检查版本和音频数量
+                try {
+                    val cachedJson = manifestCacheFile.readText()
+                    val cachedManifest = gson.fromJson(cachedJson, SoundsManifest::class.java)
+                    val cachedVersion = cachedManifest.version
+                    val cachedSoundCount = cachedManifest.sounds.size
+                    
+                    // 如果版本不同或音频数量不同，需要更新
+                    if (cachedVersion != assetsVersion || cachedSoundCount != assetsSoundCount) {
+                        needUpdate = true
+                        Log.d(TAG, "检测到清单更新: 版本 $cachedVersion -> $assetsVersion, 音频数量 $cachedSoundCount -> $assetsSoundCount")
+                    } else {
+                        Log.d(TAG, "持久化缓存已是最新版本 ($assetsVersion, $assetsSoundCount 个音频)")
+                    }
+                } catch (e: Exception) {
+                    // 缓存文件损坏，需要重新创建
+                    needUpdate = true
+                    Log.w(TAG, "持久化缓存损坏，重新初始化: ${e.message}")
                 }
+            }
+            
+            // 如果需要更新，写入新的缓存
+            if (needUpdate) {
+                manifestCacheFile.writeText(assetsJson)
+                // 同时更新内存缓存
+                remoteManifest = fixManifestData(assetsManifest)
+                Log.d(TAG, "已更新持久化缓存到版本 $assetsVersion，共 $assetsSoundCount 个音频")
             }
         } catch (e: Exception) {
             Log.e(TAG, "初始化默认清单失败: ${e.message}")
