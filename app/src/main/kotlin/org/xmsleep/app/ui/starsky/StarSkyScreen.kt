@@ -77,6 +77,20 @@ fun StarSkyScreen(
     var remoteCategories by remember { 
         mutableStateOf(initialCachedManifest?.categories ?: emptyList())
     }
+    
+    // 调试：记录5个问题音频的状态
+    LaunchedEffect(remoteSounds) {
+        val problemSounds = listOf("lake", "field", "guzheng", "guitar", "light-piano")
+        problemSounds.forEach { id ->
+            val sound = remoteSounds.find { it.id == id }
+            if (sound != null) {
+                android.util.Log.d("StarSkyScreen", "✓ 找到音频 $id: category=${sound.category}, source=${sound.source}, url=${sound.remoteUrl}")
+            } else {
+                android.util.Log.e("StarSkyScreen", "✗ 未找到音频 $id")
+            }
+        }
+        android.util.Log.d("StarSkyScreen", "当前音频总数: ${remoteSounds.size}")
+    }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }

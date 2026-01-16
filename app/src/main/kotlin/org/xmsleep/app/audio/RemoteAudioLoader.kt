@@ -85,14 +85,21 @@ class RemoteAudioLoader(private val context: Context) {
      * 为缺少的填幅默认值，不影响存在的数据
      */
     private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
+        Log.d(TAG, "RemoteAudioLoader 修复清单数据前: ${manifest.sounds.size} 个音频")
         val fixedSounds = manifest.sounds.map { sound ->
             // 为缺少的字段提供默认值
-            sound.copy(
+            val fixed = sound.copy(
                 source = sound.source ?: (if (sound.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL),
                 loopStart = sound.loopStart ?: 0L,
                 loopEnd = sound.loopEnd ?: 0L
             )
+            // 记录5个问题文件的修复情况
+            if (sound.id in listOf("lake", "field", "guzheng", "guitar", "light-piano")) {
+                Log.d(TAG, "RemoteAudioLoader 修复音频 ${sound.id}: source=${sound.source} -> ${fixed.source}, url=${sound.remoteUrl}")
+            }
+            fixed
         }
+        Log.d(TAG, "RemoteAudioLoader 修复清单数据后: ${fixedSounds.size} 个音频")
         return manifest.copy(sounds = fixedSounds)
     }
     
