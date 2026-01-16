@@ -67,7 +67,6 @@ class AudioResourceManager private constructor(context: Context) {
             if (!manifestCacheFile.exists()) {
                 // 缓存不存在，需要创建
                 needUpdate = true
-                Log.d(TAG, "持久化缓存不存在，从 assets 初始化")
             } else {
                 // 缓存存在，检查版本和音频数量
                 try {
@@ -79,9 +78,6 @@ class AudioResourceManager private constructor(context: Context) {
                     // 如果版本不同或音频数量不同，需要更新
                     if (cachedVersion != assetsVersion || cachedSoundCount != assetsSoundCount) {
                         needUpdate = true
-                        Log.d(TAG, "检测到清单更新: 版本 $cachedVersion -> $assetsVersion, 音频数量 $cachedSoundCount -> $assetsSoundCount")
-                    } else {
-                        Log.d(TAG, "持久化缓存已是最新版本 ($assetsVersion, $assetsSoundCount 个音频)")
                     }
                 } catch (e: Exception) {
                     // 缓存文件损坏，需要重新创建
@@ -95,7 +91,6 @@ class AudioResourceManager private constructor(context: Context) {
                 manifestCacheFile.writeText(assetsJson)
                 // 同时更新内存缓存
                 remoteManifest = fixManifestData(assetsManifest)
-                Log.d(TAG, "已更新持久化缓存到版本 $assetsVersion，共 $assetsSoundCount 个音频")
             }
         } catch (e: Exception) {
             Log.e(TAG, "初始化默认清单失败: ${e.message}")
@@ -178,11 +173,9 @@ class AudioResourceManager private constructor(context: Context) {
                 // 优先检查缓存，确保使用本地文件而不是网络 URL
                 val cachedFile = cacheManager.getCachedFile(fixedMetadata.id)
                 if (cachedFile != null && cachedFile.exists() && cachedFile.length() > 0) {
-                    Log.d(TAG, "使用缓存文件播放: ${fixedMetadata.id} -> ${cachedFile.absolutePath}")
                     Uri.fromFile(cachedFile)
                 } else {
                     // 如果未缓存，返回网络 URL（ExoPlayer支持流式播放）
-                    Log.d(TAG, "使用网络 URL 播放: ${fixedMetadata.id} -> ${fixedMetadata.remoteUrl}")
                     fixedMetadata.remoteUrl?.let { Uri.parse(it) }
                 }
             }
@@ -234,7 +227,6 @@ class AudioResourceManager private constructor(context: Context) {
             remoteManifest = manifest
             // 保存到持久化缓存
             savePersistedManifest(manifest)
-            Log.d(TAG, "刷新网络音频清单成功")
             Result.success(manifest)
         } catch (e: Exception) {
             Log.e(TAG, "刷新失败: ${e.message}")
@@ -254,7 +246,6 @@ class AudioResourceManager private constructor(context: Context) {
                 val fixedManifest = fixManifestData(manifest)
                 // 同时更新内存缓存
                 remoteManifest = fixedManifest
-                Log.d(TAG, "从持久化缓存加载清单成功，共 ${fixedManifest.sounds.size} 个音频")
                 fixedManifest
             } else {
                 null
@@ -269,20 +260,14 @@ class AudioResourceManager private constructor(context: Context) {
      * 修复清单中不完整的音频数据
      */
     private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
-        Log.d(TAG, "修复清单数据前: ${manifest.sounds.size} 个音频")
+    private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
         val fixedSounds = manifest.sounds.map { sound ->
-            val fixed = sound.copy(
+            sound.copy(
                 source = sound.source ?: (if (sound.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL),
                 loopStart = sound.loopStart ?: 0L,
                 loopEnd = sound.loopEnd ?: 0L
             )
-            // 记录5个问题文件的修复情况
-            if (sound.id in listOf("lake", "field", "guzheng", "guitar", "light-piano")) {
-                Log.d(TAG, "修复音频 ${sound.id}: source=${sound.source} -> ${fixed.source}, url=${sound.remoteUrl}")
-            }
-            fixed
         }
-        Log.d(TAG, "修复清单数据后: ${fixedSounds.size} 个音频")
         return manifest.copy(sounds = fixedSounds)
     }
     
@@ -294,7 +279,6 @@ class AudioResourceManager private constructor(context: Context) {
             try {
                 val json = gson.toJson(manifest)
                 manifestCacheFile.writeText(json)
-                Log.d(TAG, "清单已保存到持久化缓存")
             } catch (e: Exception) {
                 Log.e(TAG, "保存清单到持久化缓存失败: ${e.message}")
             }

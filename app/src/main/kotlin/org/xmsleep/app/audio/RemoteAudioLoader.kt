@@ -58,9 +58,7 @@ class RemoteAudioLoader(private val context: Context) {
             
             if (matchResult != null) {
                 val (username, repo, branch, path) = matchResult.destructured
-                val jsDelivrUrl = "https://cdn.jsdelivr.net/gh/$username/$repo@$branch/$path"
-                Log.d(TAG, "URL转换: $githubUrl -> $jsDelivrUrl")
-                jsDelivrUrl
+                "https://cdn.jsdelivr.net/gh/$username/$repo@$branch/$path"
             } else {
                 // 如果无法匹配，返回原URL
                 Log.w(TAG, "无法转换URL，使用原URL: $githubUrl")
@@ -85,21 +83,14 @@ class RemoteAudioLoader(private val context: Context) {
      * 为缺少的填幅默认值，不影响存在的数据
      */
     private fun fixManifestData(manifest: SoundsManifest): SoundsManifest {
-        Log.d(TAG, "RemoteAudioLoader 修复清单数据前: ${manifest.sounds.size} 个音频")
         val fixedSounds = manifest.sounds.map { sound ->
             // 为缺少的字段提供默认值
-            val fixed = sound.copy(
+            sound.copy(
                 source = sound.source ?: (if (sound.remoteUrl != null) AudioSource.REMOTE else AudioSource.LOCAL),
                 loopStart = sound.loopStart ?: 0L,
                 loopEnd = sound.loopEnd ?: 0L
             )
-            // 记录5个问题文件的修复情况
-            if (sound.id in listOf("lake", "field", "guzheng", "guitar", "light-piano")) {
-                Log.d(TAG, "RemoteAudioLoader 修复音频 ${sound.id}: source=${sound.source} -> ${fixed.source}, url=${sound.remoteUrl}")
-            }
-            fixed
         }
-        Log.d(TAG, "RemoteAudioLoader 修复清单数据后: ${fixedSounds.size} 个音频")
         return manifest.copy(sounds = fixedSounds)
     }
     
@@ -141,8 +132,6 @@ class RemoteAudioLoader(private val context: Context) {
             val urls = listOf(urlWithTimestamp, backupUrlWithTimestamp)
             
             for (url in urls) {
-                Log.d(TAG, "开始会载网络音频清单，URL: $url")
-                
                 for (attempt in 1..MAX_RETRY_COUNT) {
                     try {
                         val request = Request.Builder()
@@ -159,10 +148,7 @@ class RemoteAudioLoader(private val context: Context) {
                             }
                             .build()
                         
-                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 正在请求 $url...")
                         val response = okHttpClient.newCall(request).execute()
-                        
-                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 收到响应，状态码 ${response.code}")
                         
                         if (!response.isSuccessful) {
                             throw IOException("加载清单失败: HTTP ${response.code}")
@@ -171,12 +157,8 @@ class RemoteAudioLoader(private val context: Context) {
                         val json = response.body?.string() 
                             ?: throw IOException("响应体为空")
                         
-                        Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: 收到 JSON，长度: ${json.length} 字符")
-                        
                         try {
                             val manifest = gson.fromJson(json, SoundsManifest::class.java)
-                            
-                            Log.d(TAG, "尝试 $attempt/$MAX_RETRY_COUNT: JSON 解析成功，包含 ${manifest.sounds.size} 个音频，${manifest.categories.size} 个分类")
                             
                             if (manifest.sounds.isEmpty()) {
                                 Log.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
@@ -186,7 +168,6 @@ class RemoteAudioLoader(private val context: Context) {
                             val fixedManifest = fixManifestData(manifest)
                             val convertedManifest = convertManifestUrls(fixedManifest)
                             
-                            Log.d(TAG, "成功加载网络音频清单，共 ${convertedManifest.sounds.size} 个音频 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url)")
                             return@withContext convertedManifest
                         } catch (jsonError: Exception) {
                             Log.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
@@ -196,13 +177,11 @@ class RemoteAudioLoader(private val context: Context) {
                     } catch (e: Exception) {
                         lastException = e
                         Log.w(TAG, "加载失败 (尝试 $attempt/$MAX_RETRY_COUNT, URL: $url): ${e.javaClass.simpleName} - ${e.message}")
-                        e.printStackTrace()
                         
                         // 如果不是最后一次尝试，等待后重试
                         if (attempt < MAX_RETRY_COUNT) {
                             val retryDelay = INITIAL_RETRY_DELAY * attempt // 递增延迟
                             delay(retryDelay)
-                            Log.d(TAG, "等待 ${retryDelay}ms 后重试...")
                         }
                     }
                 }

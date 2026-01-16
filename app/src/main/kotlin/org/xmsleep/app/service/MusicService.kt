@@ -60,7 +60,6 @@ class MusicService : Service() {
     
     override fun onCreate() {
         super.onCreate()
-        Log.d(TAG, "MusicService onCreate")
         
         // 注册定时器监听器
         timerManager.addListener(timerListener)
@@ -91,7 +90,6 @@ class MusicService : Service() {
     
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "MusicService onDestroy")
         
         // 移除定时器监听器
         timerManager.removeListener(timerListener)
@@ -111,7 +109,6 @@ class MusicService : Service() {
             timeLeftText = timeLeftText
         )
         startForeground(NotificationHelper.NOTIFICATION_ID, notification)
-        Log.d(TAG, "前台服务已启动")
     }
     
     /**
@@ -135,7 +132,6 @@ class MusicService : Service() {
     fun updatePlayingState(playing: Boolean, soundsCount: Int) {
         // 如果正在停止服务，不再处理任何更新
         if (isStopping) {
-            Log.d(TAG, "正在停止服务，忽略状态更新")
             return
         }
         
@@ -144,7 +140,6 @@ class MusicService : Service() {
         
         // 关键修复：恢复期间不要重新保存播放列表，避免覆盖之前保存的列表
         if (isRestoring) {
-            Log.d(TAG, "恢复播放中，跳过保存播放列表")
             updateNotification()
             return
         }
@@ -156,8 +151,6 @@ class MusicService : Service() {
             
             lastPlayingRemoteSoundIds.clear()
             lastPlayingRemoteSoundIds.addAll(audioManager.getPlayingRemoteSoundIds())
-            
-            Log.d(TAG, "保存播放状态: 本地=${lastPlayingLocalSounds.size}, 远程=${lastPlayingRemoteSoundIds.size}")
         }
         
         // 如果有倒计时，更新倒计时文本
@@ -179,8 +172,6 @@ class MusicService : Service() {
      * 处理播放/暂停按钮点击
      */
     private fun handlePlayPause() {
-        Log.d(TAG, "处理播放/暂停按钮点击，当前状态: isPlaying=$isPlaying")
-        
         if (isPlaying) {
             // 当前正在播放，执行暂停
             // 关键：在调用 pauseAllSounds() 之前先保存播放列表
@@ -190,25 +181,18 @@ class MusicService : Service() {
             lastPlayingRemoteSoundIds.clear()
             lastPlayingRemoteSoundIds.addAll(audioManager.getPlayingRemoteSoundIds())
             
-            Log.d(TAG, "保存播放状态: 本地=${lastPlayingLocalSounds.size}, 远程=${lastPlayingRemoteSoundIds.size}")
-            Log.d(TAG, "暂停所有音频")
-            
             audioManager.pauseAllSounds()
             
             // 暂停倒计时
             if (timerManager.isTimerActive.value) {
                 timerManager.pauseTimer()
-                Log.d(TAG, "倒计时已暂停")
             }
             
             isPlaying = false
         } else {
             // 当前已暂停，恢复上次播放的音频
-            Log.d(TAG, "恢复播放: 本地=${lastPlayingLocalSounds.size}, 远程=${lastPlayingRemoteSoundIds.size}")
-            
             if (lastPlayingLocalSounds.isEmpty() && lastPlayingRemoteSoundIds.isEmpty()) {
                 // 没有可恢复的音频，关闭服务
-                Log.d(TAG, "没有可恢复的音频，关闭服务")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return
@@ -223,7 +207,6 @@ class MusicService : Service() {
                 soundsToRestore.forEach { sound ->
                     try {
                         audioManager.playSound(applicationContext ?: return, sound)
-                        Log.d(TAG, "恢复本地播放: $sound")
                     } catch (e: Exception) {
                         Log.e(TAG, "恢复本地播放 $sound 失败: ${e.message}")
                     }
@@ -238,7 +221,6 @@ class MusicService : Service() {
                         if (metadataAndUri != null) {
                             val (metadata, uri) = metadataAndUri
                             audioManager.playRemoteSound(applicationContext ?: return, metadata, uri)
-                            Log.d(TAG, "恢复远程播放: $soundId")
                         } else {
                             Log.w(TAG, "无法恢复远程音频 $soundId：元数据不存在")
                         }
@@ -250,14 +232,12 @@ class MusicService : Service() {
                 // 恢复倒计时
                 if (timerManager.isTimerActive.value && timerManager.isTimerPaused.value) {
                     timerManager.resumeTimer()
-                    Log.d(TAG, "倒计时已恢复")
                 }
                 
                 isPlaying = true
             } finally {
                 // 恢复完成后，清除恢复标志
                 isRestoring = false
-                Log.d(TAG, "恢复播放完成")
             }
         }
         
@@ -269,8 +249,6 @@ class MusicService : Service() {
      * 处理停止按钮点击（直接退出应用）
      */
     private fun handleStop() {
-        Log.d(TAG, "处理停止按钮点击 - 退出应用")
-        
         // 停止所有音频
         audioManager.stopAllSounds()
         

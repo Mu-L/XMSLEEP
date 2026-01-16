@@ -189,7 +189,6 @@ class AudioCacheManager private constructor(context: Context) {
                         }
                     }
                     
-                    Log.d(TAG, "音频下载成功: $soundId (来源: $source, 尝试 $attempt/$MAX_RETRY_COUNT)")
                     return@withContext Result.success(file)
                 } catch (e: Exception) {
                     lastException = e
@@ -199,7 +198,6 @@ class AudioCacheManager private constructor(context: Context) {
                     if (attempt < MAX_RETRY_COUNT) {
                         val delay = INITIAL_RETRY_DELAY * attempt // 递增延迟
                         kotlinx.coroutines.delay(delay)
-                        Log.d(TAG, "等待 ${delay}ms 后重试...")
                     }
                 }
             }
