@@ -3,7 +3,7 @@
 
 <div align="center">
 
-一个专注于白噪音播放的 Android 应用，帮助您放松、专注和入眠。
+一个专注于白噪音播放的 Android 应用，帮助你放松、专注和入眠。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-blue.svg)](https://kotlinlang.org/)
@@ -200,8 +200,8 @@ XMSLEEP 是一个专注于白噪音播放的 Android 应用，提供多种自然
 
 <div align="center">
 
-**⭐ 如果这个项目对您有帮助，请给个 Star！**
+**⭐ 如果这个项目对你有帮助，请给个 Star！**
 
-© 2025 XMSLEEP. All rights reserved.
+© 2026 XMSLEEP. All rights reserved.
 
 </div>
