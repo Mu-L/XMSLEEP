@@ -105,9 +105,9 @@ fun RemoteSoundCard(
     )
     
     val cardBackgroundColor = if (isCached) {
-        MaterialTheme.colorScheme.surfaceContainerHigh // 已下载使用较深的背景色，与未下载角标颜色一致
+        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) // 已下载使用较深的背景色，与未下载角标颜色一致
     } else {
-        MaterialTheme.colorScheme.surfaceVariant // 未下载使用正常背景色
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) // 未下载使用正常背景色
     }
     
     var showTitleMenu by remember { mutableStateOf(false) }

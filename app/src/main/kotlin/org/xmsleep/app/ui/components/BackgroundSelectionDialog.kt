@@ -1,0 +1,193 @@
+package org.xmsleep.app.ui.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.HideImage
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import org.xmsleep.app.R
+import org.xmsleep.app.ui.BackgroundSelection
+
+/**
+ * 背景选择对话框
+ * 
+ * 显示可选的背景动画选项，支持实时预览和选择
+ * 
+ * @param currentSelection 当前选中的背景
+ * @param onSelectionChange 选择变化时的回调（用于实时预览）
+ * @param onDismiss 关闭对话框的回调
+ * @param onConfirm 确认选择的回调
+ * @param currentLanguage 当前语言（用于强制重组以更新文本）
+ */
+@Composable
+fun BackgroundSelectionDialog(
+    currentSelection: BackgroundSelection,
+    onSelectionChange: (BackgroundSelection) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    currentLanguage: org.xmsleep.app.i18n.LanguageManager.Language? = null
+) {
+    val context = LocalContext.current
+    
+    // 所有可选的背景选项
+    val backgroundOptions = remember {
+        listOf(
+            BackgroundSelection.None,
+            BackgroundSelection.Background1,
+            BackgroundSelection.Background2,
+            BackgroundSelection.Background3,
+            BackgroundSelection.Background4,
+            BackgroundSelection.Background5
+        )
+    }
+    
+    // 获取字符串资源，使用 currentLanguage 作为 key 确保语言切换时重新组合
+    val dialogTitle = remember(currentLanguage) { context.getString(R.string.select_background) }
+    val confirmText = remember(currentLanguage) { context.getString(android.R.string.ok) }
+    val cancelText = remember(currentLanguage) { context.getString(android.R.string.cancel) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = dialogTitle)
+        },
+        text = {
+            // 使用 LazyVerticalGrid 实现 2 列网格布局
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+            ) {
+                items(backgroundOptions) { option ->
+                    BackgroundOptionItem(
+                        option = option,
+                        isSelected = option == currentSelection,
+                        onClick = { onSelectionChange(option) },
+                        currentLanguage = currentLanguage
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = confirmText)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = cancelText)
+            }
+        }
+    )
+}
+
+/**
+ * 背景选项项
+ * 
+ * 显示单个背景选项，包括缩略图预览和名称
+ * 
+ * @param option 背景选项
+ * @param isSelected 是否选中
+ * @param onClick 点击回调
+ * @param currentLanguage 当前语言（用于强制重组以更新文本）
+ */
+@Composable
+private fun BackgroundOptionItem(
+    option: BackgroundSelection,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    currentLanguage: org.xmsleep.app.i18n.LanguageManager.Language? = null
+) {
+    val context = LocalContext.current
+    
+    // 获取显示名称和选中文本，使用 currentLanguage 作为 key 确保语言切换时重新获取
+    val displayName = remember(option, currentLanguage) { option.getDisplayName(context) }
+    val selectedText = remember(currentLanguage) { context.getString(R.string.selected) }
+    
+    Card(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        ),
+        border = if (isSelected) {
+            androidx.compose.foundation.BorderStroke(
+                2.dp,
+                MaterialTheme.colorScheme.primary
+            )
+        } else null
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            // 如果不是 None，显示缩略图
+            if (option != BackgroundSelection.None && option.resourceId != null) {
+                AnimatedWebPImage(
+                    drawableResId = option.resourceId,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    isPlaying = false // 缩略图不播放动画
+                )
+            } else {
+                // 无背景选项显示占位图标
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Default.HideImage,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = if (isSelected) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+            
+            // 选中状态指示器（勾选图标）
+            if (isSelected) {
+                androidx.compose.material3.Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(24.dp),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        androidx.compose.material3.Icon(
+                            androidx.compose.material.icons.Icons.Default.Check,
+                            contentDescription = selectedText,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,11 +30,15 @@ import org.xmsleep.app.audio.AudioManager
 import org.xmsleep.app.i18n.LanguageManager
 import org.xmsleep.app.Constants
 import org.xmsleep.app.ui.components.AboutDialog
+import org.xmsleep.app.ui.components.BackgroundSelectionDialog
 import org.xmsleep.app.ui.components.ClearCacheDialog
 import org.xmsleep.app.ui.components.LanguageSelectionDialog
 import org.xmsleep.app.ui.components.SwitchItem
+import org.xmsleep.app.ui.BackgroundSelection
+import org.xmsleep.app.preferences.PreferencesManager
 import org.xmsleep.app.update.UpdateDialog
 import org.xmsleep.app.utils.*
+import androidx.compose.ui.res.painterResource
 
 /**
  * 设置页面 - 应用配置和管理
@@ -44,6 +49,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     hideAnimation: Boolean = true,
     onHideAnimationChange: (Boolean) -> Unit = {},
+    backgroundSelection: BackgroundSelection = BackgroundSelection.None,
+    onBackgroundSelectionChange: (BackgroundSelection) -> Unit = {},
     updateViewModel: org.xmsleep.app.update.UpdateViewModel,
     currentLanguage: LanguageManager.Language,
     onLanguageChange: (LanguageManager.Language) -> Unit,
@@ -65,6 +72,11 @@ fun SettingsScreen(
     var showAboutDialog by remember { mutableStateOf(false) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showBackgroundDialog by remember { mutableStateOf(false) }
+    var showAutoCountdownDialog by remember { mutableStateOf(false) }
+    var autoCountdownMinutes by remember { 
+        mutableIntStateOf(org.xmsleep.app.preferences.PreferencesManager.getAutoCountdownMinutes(context))
+    }
     val updateState by updateViewModel.updateState.collectAsState()
     // 获取当前版本号
     val currentVersion = remember {
@@ -167,35 +179,9 @@ fun SettingsScreen(
 		) {
 			Text(
 				context.getString(R.string.settings),
-				style = MaterialTheme.typography.headlineSmall,
+				style = MaterialTheme.typography.headlineMedium,
 				fontWeight = FontWeight.Bold,
 			)
-			// 参考首页深浅色切换按钮样式的圆形按钮
-			Surface(
-				onClick = {
-					val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(Constants.GITHUB_URL))
-					intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-					try {
-						context.startActivity(intent)
-					} catch (_: Exception) {
-					}
-				},
-				shape = CircleShape,
-				color = MaterialTheme.colorScheme.surfaceVariant,
-				modifier = Modifier.size(32.dp)
-			) {
-				Box(
-					modifier = Modifier.fillMaxSize(),
-					contentAlignment = Alignment.Center
-				) {
-					// 使用 GitHub 官方图标资源
-					androidx.compose.foundation.Image(
-						painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_github),
-						contentDescription = "GitHub",
-						colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant)
-					)
-				}
-			}
 		}
         
         // 可滚动内容区域
@@ -214,392 +200,235 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 32.dp),
+                .padding(horizontal = 8.dp) // 减少水平padding，与SettingsCategory一致
+                .padding(bottom = 100.dp), // 增加底部 padding 避开悬浮导航栏
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
         // 外观设置
-        Text(
-            context.getString(R.string.appearance),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-            Card(
-            onClick = onNavigateToTheme,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Palette,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.theme_and_colors), style = MaterialTheme.typography.titleMedium)
-                    Text(
+        SettingsCategory(
+            title = context.getString(R.string.appearance),
+            items = listOf(
+                SettingsCategoryItem(
+                    icon = Icons.Default.Palette,
+                    title = { Text(context.getString(R.string.theme_and_colors)) },
+                    description = {
+                        Text(
                             context.getString(R.string.appearance_mode_theme_color),
-                        style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    onClick = onNavigateToTheme
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.Wallpaper,
+                    title = { Text(context.getString(R.string.background_settings)) },
+                    description = {
+                        Text(
+                            context.getString(R.string.select_background),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    onClick = { showBackgroundDialog = true }
                 )
-            }
-        }
+            )
+        )
         
         Spacer(Modifier.height(8.dp))
         
         // 系统设置
-        Text(
-            context.getString(R.string.system),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        // 语言切换
-        Card(
-            onClick = { showLanguageDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Translate,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.language), style = MaterialTheme.typography.titleMedium)
+        SettingsCategory(
+            title = context.getString(R.string.system),
+            items = listOf(
+                SettingsCategoryItem(
+                    icon = Icons.Default.Translate,
+                    title = { Text(context.getString(R.string.language)) },
+                    description = {
                         Text(
                             context.getString(R.string.language_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        currentLanguage.displayName,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-        
-        // 隐藏动画文件
-        SwitchItem(
-            checked = hideAnimation,
-            onCheckedChange = onHideAnimationChange,
-            title = context.getString(R.string.hide_animation),
-            description = context.getString(R.string.hide_lottie_animation_in_sound_cards)
-        )
-        
-        // 一键调整音量
-            Card(
-            onClick = { showVolumeDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.VolumeUp,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.adjust_all_volume), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                            context.getString(R.string.unified_adjust_all_sound_volume),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "${(currentVolumeDisplay * 100).toInt()}%",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-        
-            Card(
-            onClick = { showClearCacheDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.clear_cache), style = MaterialTheme.typography.titleMedium)
-                    Text(
-                            context.getString(R.string.clear_app_cache_data),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (isCalculatingCache) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                    },
+                    trailingContent = {
                         Text(
-                            formatBytes(cacheSize),
+                            currentLanguage.displayName,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
-                    }
-                }
-            }
-        }
+                    },
+                    onClick = { showLanguageDialog = true }
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.AutoMirrored.Filled.VolumeUp,
+                    title = { Text(context.getString(R.string.adjust_all_volume)) },
+                    description = {
+                        Text(
+                            context.getString(R.string.unified_adjust_all_sound_volume),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        Text(
+                            "${(currentVolumeDisplay * 100).toInt()}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = { showVolumeDialog = true }
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.Timer,
+                    title = { Text(context.getString(R.string.auto_countdown)) },
+                    description = {
+                        Text(
+                            context.getString(R.string.auto_countdown_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        Text(
+                            when (autoCountdownMinutes) {
+                                0 -> context.getString(R.string.no_countdown)
+                                30 -> context.getString(R.string.countdown_30_minutes)
+                                45 -> context.getString(R.string.countdown_45_minutes)
+                                60 -> context.getString(R.string.countdown_60_minutes)
+                                120 -> context.getString(R.string.countdown_2_hours)
+                                else -> "${autoCountdownMinutes}${context.getString(R.string.minutes_only, autoCountdownMinutes)}"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = { showAutoCountdownDialog = true }
+                )
+            )
+        )
         
         Spacer(Modifier.height(8.dp))
         
         // 其他
-        Text(
-            context.getString(R.string.other),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        
-        // 每日一言历史
-        Card(
-            onClick = onNavigateToQuoteHistory,
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.FormatQuote,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.daily_quote), style = MaterialTheme.typography.titleMedium)
+        SettingsCategory(
+            title = context.getString(R.string.other),
+            items = listOf(
+                SettingsCategoryItem(
+                    icon = Icons.Default.Delete,
+                    title = { Text(context.getString(R.string.clear_cache)) },
+                    description = {
+                        Text(
+                            context.getString(R.string.clear_app_cache_data),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    trailingContent = {
+                        if (isCalculatingCache) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp)
+                        } else {
+                            Text(
+                                formatBytes(cacheSize),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    onClick = { showClearCacheDialog = true }
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.FormatQuote,
+                    title = { Text(context.getString(R.string.daily_quote)) },
+                    description = {
                         Text(
                             context.getString(R.string.daily_quote_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = null
-                )
-            }
-        }
-        
-        // 软件更新
-        Card(
-            onClick = { showUpdateDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.SystemUpdate,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.software_update), style = MaterialTheme.typography.titleMedium)
+                    },
+                    trailingContent = {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    onClick = onNavigateToQuoteHistory
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.SystemUpdate,
+                    title = { Text(context.getString(R.string.software_update)) },
+                    description = {
                         Text(
                             context.getString(R.string.check_and_update_to_latest_version),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        "v$currentVersion",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-        }
-        
-        // 加入群聊
-        Card(
-            onClick = {
-                // 打开Telegram群聊链接
-                val telegramUrl = Constants.TELEGRAM_URL
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(telegramUrl))
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    context.startActivity(intent)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "无法打开链接，请检查是否安装了Telegram或浏览器", Toast.LENGTH_SHORT).show()
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_telegram),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                    Column {
-                        Text(context.getString(R.string.join_group), style = MaterialTheme.typography.titleMedium)
+                    },
+                    trailingContent = {
+                        Text(
+                            "v$currentVersion",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = { showUpdateDialog = true }
+                ),
+                SettingsCategoryItem(
+                    icon = painterResource(R.drawable.ic_telegram),
+                    title = { Text(context.getString(R.string.join_group)) },
+                    description = {
                         Text(
                             context.getString(R.string.join_group_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    },
+                    onClick = {
+                        val telegramUrl = Constants.TELEGRAM_URL
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(telegramUrl))
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "无法打开链接，请检查是否安装了Telegram或浏览器", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                }
-            }
-        }
-        
-        // 关于 XMSLEEP
-        Card(
-            onClick = { showAboutDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer
-            )
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Column {
-                        Text(context.getString(R.string.about_xmsleep), style = MaterialTheme.typography.titleMedium)
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.Info,
+                    title = { Text(context.getString(R.string.about_xmsleep)) },
+                    description = {
                         Text(
                             context.getString(R.string.view_app_info_version_copyright),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-            }
-        }
+                    },
+                    onClick = { showAboutDialog = true }
+                )
+            )
+        )
         }
         
         // 软件更新对话框
@@ -788,6 +617,107 @@ fun SettingsScreen(
                     showLanguageDialog = false
                 },
                 onDismiss = { showLanguageDialog = false }
+            )
+        }
+        
+        // 背景选择对话框
+        if (showBackgroundDialog) {
+            // 保存打开对话框时的原始选择
+            val originalSelection = remember { backgroundSelection }
+            // 跟踪临时选择
+            var tempSelection by remember { mutableStateOf(backgroundSelection) }
+            
+            android.util.Log.d("SettingsScreen", "打开背景对话框，当前选择: $backgroundSelection")
+            
+            BackgroundSelectionDialog(
+                currentSelection = tempSelection,
+                onSelectionChange = { selection ->
+                    // 实时预览：只更新临时选择和UI显示
+                    android.util.Log.d("SettingsScreen", "选择变化（预览）: $selection")
+                    tempSelection = selection
+                    onBackgroundSelectionChange(selection) // 实时预览
+                },
+                onDismiss = {
+                    // 取消时恢复原始选择
+                    android.util.Log.d("SettingsScreen", "取消，恢复原始选择: $originalSelection")
+                    onBackgroundSelectionChange(originalSelection)
+                    showBackgroundDialog = false
+                },
+                onConfirm = {
+                    // 确认时：确保状态和持久化都更新
+                    android.util.Log.d("SettingsScreen", "确认，保存选择: $tempSelection")
+                    // 注意：onBackgroundSelectionChange 内部已经调用了 saveBackgroundSelection
+                    // 所以这里只需要调用一次即可
+                    onBackgroundSelectionChange(tempSelection)
+                    showBackgroundDialog = false
+                },
+                currentLanguage = currentLanguage // 传递当前语言以强制重组
+            )
+        }
+        
+        // 自动倒计时选择对话框
+        if (showAutoCountdownDialog) {
+            val countdownOptions = listOf(
+                0 to context.getString(R.string.no_countdown),
+                30 to context.getString(R.string.countdown_30_minutes),
+                45 to context.getString(R.string.countdown_45_minutes),
+                60 to context.getString(R.string.countdown_60_minutes),
+                120 to context.getString(R.string.countdown_2_hours)
+            )
+            
+            AlertDialog(
+                onDismissRequest = { showAutoCountdownDialog = false },
+                title = { Text(context.getString(R.string.select_countdown_time)) },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        countdownOptions.forEach { (minutes, label) ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        autoCountdownMinutes = minutes
+                                        org.xmsleep.app.preferences.PreferencesManager.saveAutoCountdownMinutes(context, minutes)
+                                        showAutoCountdownDialog = false
+                                        Toast.makeText(
+                                            context,
+                                            "${context.getString(R.string.current_setting)}: $label",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                    .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = autoCountdownMinutes == minutes,
+                                    onClick = {
+                                        autoCountdownMinutes = minutes
+                                        org.xmsleep.app.preferences.PreferencesManager.saveAutoCountdownMinutes(context, minutes)
+                                        showAutoCountdownDialog = false
+                                        Toast.makeText(
+                                            context,
+                                            "${context.getString(R.string.current_setting)}: $label",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showAutoCountdownDialog = false }) {
+                        Text(context.getString(R.string.cancel))
+                    }
+                }
             )
         }
     }

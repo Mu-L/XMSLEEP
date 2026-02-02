@@ -34,6 +34,7 @@ fun QuoteHistoryScreen(
     var selectedQuote by remember { mutableStateOf<Quote?>(null) }
     
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.Transparent, // 设置透明背景，让背景动画显示
         topBar = {
             TopAppBar(
                 title = { Text(context.getString(R.string.quote_history)) },
@@ -48,7 +49,10 @@ fun QuoteHistoryScreen(
                             Icon(Icons.Default.Delete, contentDescription = context.getString(R.string.clear_history))
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = androidx.compose.ui.graphics.Color.Transparent // TopBar 也设置透明
+                )
             )
         }
     ) { paddingValues ->

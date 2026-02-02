@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -37,11 +39,26 @@ import org.xmsleep.app.ui.settings.ThemeSettingsScreen
 import org.xmsleep.app.ui.starsky.StarSkyScreen
 import org.xmsleep.app.update.UpdateDialog
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.materials.HazeMaterials
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 
 /**
  * 主屏幕 - 包含底部导航和页面切换
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
 fun MainScreen(
     darkMode: DarkModeOption,
@@ -49,6 +66,7 @@ fun MainScreen(
     useDynamicColor: Boolean,
     useBlackBackground: Boolean,
     hideAnimation: Boolean,
+    backgroundSelection: org.xmsleep.app.ui.BackgroundSelection,
     soundCardsColumnsCount: Int,
     currentLanguage: LanguageManager.Language,
     audioPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
@@ -59,12 +77,17 @@ fun MainScreen(
     onDynamicColorChange: (Boolean) -> Unit,
     onBlackBackgroundChange: (Boolean) -> Unit,
     onHideAnimationChange: (Boolean) -> Unit,
+    onBackgroundSelectionChange: (org.xmsleep.app.ui.BackgroundSelection) -> Unit,
     onSoundCardsColumnsCountChange: (Int) -> Unit
 ) {
     // 使用Navigator接口来管理导航
     val navigator = rememberXMSleepNavigator()
     var selectedItem by remember { mutableIntStateOf(1) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val isDarkTheme = isSystemInDarkTheme()
+    
+    // Haze状态用于毛玻璃效果
+    val hazeState = remember { HazeState() }
     
     // 本地音频权限相关
     val requiredPermission = if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -382,49 +405,24 @@ fun MainScreen(
     // 使用ProvideNavigator提供导航器给子组件
     ProvideNavigator(navigator) {
         Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-        topBar = {
-            // TopBar已移除（视频源功能已删除）
-        },
-        floatingActionButton = {
-            // FloatingActionButton已移除（视频源功能已删除）
-        },
-        bottomBar = {
-            // 只在主页面显示底部导航栏
-            AnimatedVisibility(
-                visible = isMainRoute,
-                exit = fadeOut(animationSpec = tween(durationMillis = 200)),
-                enter = fadeIn(animationSpec = tween(durationMillis = 250, delayMillis = 50))
+            // 内容层 - 应用haze捕获内容用于模糊
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(hazeState)
             ) {
-                NavigationBar {
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.LocalFlorist, null) },
-                        label = { Text(context.getString(R.string.white_noise)) },
-                        selected = selectedItem == 1,
-                        onClick = { selectedItem = 1 }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Satellite, null) },
-                        label = { Text(context.getString(R.string.star_sky)) },
-                        selected = selectedItem == 2,
-                        onClick = { selectedItem = 2 }
-                    )
-                    NavigationBarItem(
-                        icon = { Icon(Icons.Default.Settings, null) },
-                        label = { Text(context.getString(R.string.settings)) },
-                        selected = selectedItem == 3,
-                        onClick = { selectedItem = 3 }
-                    )
-                }
-            }
-        }
-    ) { paddingValues ->
-        // NavHost 始终存在，用于处理二级页面导航
-        NavHost(
-            navController = navigator.navController,
-            startDestination = "main",  // 主页面路由
-            modifier = Modifier.fillMaxSize()
-        ) {
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    topBar = {},
+                    floatingActionButton = {},
+                    bottomBar = {} // 底部导航栏移到外面作为独立层
+                ) { paddingValues ->
+                    // NavHost 始终存在，用于处理二级页面导航
+                    NavHost(
+                        navController = navigator.navController,
+                        startDestination = "main",
+                        modifier = Modifier.fillMaxSize()
+                    ) {
             // 主页面路由（显示 AnimatedContent）
             composable("main") {
                 // 主页面：直接根据 selectedItem 切换内容（支持左右滑动切换）
@@ -488,6 +486,8 @@ fun MainScreen(
                                     .fillMaxSize()
                                     .padding(paddingValues),
                                 hideAnimation = hideAnimation,
+                                backgroundSelection = backgroundSelection,
+                                onBackgroundSelectionChange = onBackgroundSelectionChange,
                                 columnsCount = soundCardsColumnsCount,
                                 onColumnsCountChange = onSoundCardsColumnsCountChange,
                                 preset1Sounds = preset1Sounds,
@@ -559,6 +559,8 @@ fun MainScreen(
                                     .padding(paddingValues),
                                 hideAnimation = hideAnimation,
                                 onHideAnimationChange = onHideAnimationChange,
+                                backgroundSelection = backgroundSelection,
+                                onBackgroundSelectionChange = onBackgroundSelectionChange,
                                 updateViewModel = updateViewModel,
                                 currentLanguage = currentLanguage,
                                 onLanguageChange = onLanguageChange,
@@ -673,6 +675,81 @@ fun MainScreen(
                 )
             }
         }
+                }
+            }
+            
+            // 底部导航栏 - 作为独立层，应用毛玻璃效果
+            // 只在主页面显示
+            androidx.compose.animation.AnimatedVisibility(
+                visible = isMainRoute,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = androidx.compose.animation.fadeIn(
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 250,
+                        delayMillis = 50
+                    )
+                ),
+                exit = androidx.compose.animation.fadeOut(
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 200)
+                )
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.navigationBars)
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 8.dp)
+                        .clip(MaterialTheme.shapes.extraLarge)
+                        .hazeChild(
+                            state = hazeState,
+                            style = HazeMaterials.regular()
+                        ),
+                    color = Color.Transparent,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 0.5.dp,
+                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                            )
+                        )
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 8.dp)
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 白噪音 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 1,
+                            onClick = { selectedItem = 1 },
+                            icon = Icons.Default.LocalFlorist,
+                            label = context.getString(R.string.white_noise)
+                        )
+                        
+                        // 星空 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 2,
+                            onClick = { selectedItem = 2 },
+                            icon = Icons.Default.Satellite,
+                            label = context.getString(R.string.star_sky)
+                        )
+                        
+                        // 设置 Tab
+                        NavigationBarItem(
+                            selected = selectedItem == 3,
+                            onClick = { selectedItem = 3 },
+                            icon = Icons.Default.Settings,
+                            label = context.getString(R.string.settings)
+                        )
+                    }
+                }
+            }
         }
         
         // 全局浮动播放按钮（新版本 - 吸附式交互）
@@ -784,36 +861,88 @@ fun MainScreen(
                 }
             )
         }
+        
+        // 本地音频权限请求对话框
+        if (showPermissionDialog) {
+            AlertDialog(
+                onDismissRequest = { showPermissionDialog = false },
+                icon = { Icon(Icons.Default.Folder, contentDescription = null) },
+                title = { Text(context.getString(R.string.storage_permission_required)) },
+                text = { Text(context.getString(R.string.permission_denied_hint)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            android.util.Log.d("MainScreen", "点击授予权限按钮")
+                            showPermissionDialog = false
+                            // 使用从 MainActivity 传递的 audioPermissionLauncher 请求权限
+                            audioPermissionLauncher.launch(requiredPermission)
+                            permissionGrantedPending = true
+                            onAudioPermissionGranted()
+                            android.util.Log.d("MainScreen", "权限请求已发送: $requiredPermission")
+                        }
+                    ) {
+                        Text(context.getString(R.string.request_permission))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPermissionDialog = false }) {
+                        Text(context.getString(R.string.cancel))
+                    }
+                }
+            )
         }
     }
+}
+
+/**
+ * 自定义导航栏项目组件
+ */
+@Composable
+private fun NavigationBarItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    val iconColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+    }
     
-    // 本地音频权限请求对话框
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            icon = { Icon(Icons.Default.Folder, contentDescription = null) },
-            title = { Text(context.getString(R.string.storage_permission_required)) },
-            text = { Text(context.getString(R.string.permission_denied_hint)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        android.util.Log.d("MainScreen", "点击授予权限按钮")
-                        showPermissionDialog = false
-                        // 使用从 MainActivity 传递的 audioPermissionLauncher 请求权限
-                        audioPermissionLauncher.launch(requiredPermission)
-                        permissionGrantedPending = true
-                        onAudioPermissionGranted()
-                        android.util.Log.d("MainScreen", "权限请求已发送: $requiredPermission")
-                    }
-                ) {
-                    Text(context.getString(R.string.request_permission))
-                }
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (selected) 1f else 0.95f,
+        animationSpec = androidx.compose.animation.core.spring(
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow,
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioLowBouncy
+        ),
+        label = "nav_item_scale"
+    )
+    
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
             },
-            dismissButton = {
-                TextButton(onClick = { showPermissionDialog = false }) {
-                    Text(context.getString(R.string.cancel))
-                }
-            }
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(24.dp),
+            tint = iconColor
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = iconColor
         )
     }
 }

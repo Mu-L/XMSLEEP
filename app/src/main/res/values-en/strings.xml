@@ -58,9 +58,19 @@
 
 • Copyright Notice: This app only provides audio playback functions and does not own the copyright of any audio content. All audio content is for personal learning and entertainment only and should not be used for commercial purposes. If you find any audio content that infringes your copyright, please contact us and we will handle it promptly.</string>
     <string name="technical_info_title">Technical Information</string>
-    <string name="copyright">© 2025 XMSLEEP. All rights reserved.\n\nThe audio content provided by this app is for personal learning and entertainment only.\nPlease respect the copyright of related audio resources and do not use them for commercial purposes.</string>
+    <string name="copyright">© XMSLEEP. All rights reserved.\n\nThe audio content provided by this app is for personal learning and entertainment only.\nPlease respect the copyright of related audio resources and do not use them for commercial purposes.</string>
     <string name="hide_animation">Hide WebP Animation</string>
     <string name="hide_lottie_animation_in_sound_cards">Hide WebP animation in sound cards</string>
+    <string name="background_settings">Background Settings</string>
+    <string name="background_animation">Background Animation</string>
+    <string name="select_background">Select Background</string>
+    <string name="no_background">No Background</string>
+    <string name="background_1">Background 1</string>
+    <string name="background_2">Background 2</string>
+    <string name="background_3">Background 3</string>
+    <string name="background_4">Background 4</string>
+    <string name="background_5">Background 5</string>
+    <string name="background_preview">Preview Background</string>
     <string name="white_noise_cards">White Noise Cards</string>
     <string name="builtin_sounds_offline_hint">Built-in sounds, no network required</string>
     <string name="selected_count">Selected (%1$d)</string>
@@ -69,6 +79,9 @@
     <string name="cancel_batch_select">Cancel Batch Select</string>
     <string name="default_playback_area">Pinned Sound Area</string>
     <string name="click_play_button_to_play_all">Convenient sound playback</string>
+    <string name="play_preset">Play Preset</string>
+    <string name="pause_preset">Pause Preset</string>
+    <string name="preset">Preset</string>
     <string name="done">Done</string>
     <string name="max_3_sounds_limit">Pinned sound area can only add up to 3 sounds</string>
     <string name="default_area_updated">Pinned sound area updated</string>
@@ -166,6 +179,18 @@
 If you have any questions, please contact us through the in-app contact method.</string>
     <string name="wish_good_sleep">~ May you have sweet dreams ~</string>
     
+    <!-- Auto Countdown -->
+    <string name="auto_countdown">Auto Countdown</string>
+    <string name="auto_countdown_description">Auto stop after playing preset</string>
+    <string name="select_countdown_time">Select Countdown Time</string>
+    <string name="no_countdown">No Countdown</string>
+    <string name="countdown_30_minutes">30 Minutes</string>
+    <string name="countdown_45_minutes">45 Minutes</string>
+    <string name="countdown_60_minutes">60 Minutes</string>
+    <string name="countdown_1_hour">1 Hour</string>
+    <string name="countdown_2_hours">2 Hours</string>
+    <string name="current_setting">Current Setting</string>
+    
     <!-- Floating Play Button -->
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
@@ -208,6 +233,7 @@ If you have any questions, please contact us through the in-app contact method.<
     
     <!-- Preset Empty State Hint -->
     <string name="preset_empty_hint">Long press sound cards to add</string>
+    <string name="close">Close</string>
     
     <!-- Local Audio Permissions -->
     <string name="storage_permission_required">Storage Permission Required</string>
@@ -257,4 +283,106 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="tap_to_play">Tap to Play</string>
     <string name="refresh_success">Refresh Successful</string>
     <string name="refresh_failed">Refresh Failed</string>
+    
+    <!-- Healing Quotes - Morning -->
+    <string-array name="healing_quotes_morning">
+        <item>Good morning, may your day be full of energy</item>
+        <item>A new day, a new beginning</item>
+        <item>Dawn breaks, beauty arrives as promised</item>
+        <item>Greet the new day with a smile</item>
+        <item>Morning sunshine warms your heart</item>
+        <item>Stay energized today</item>
+        <item>The early bird catches the worm</item>
+        <item>A beautiful day starts now</item>
+        <item>May every morning be full of hope</item>
+        <item>Dawn appears, all things revive</item>
+        <item>Good morning, be your best self</item>
+        <item>A new day, full of possibilities</item>
+        <item>Morning breeze brings good mood</item>
+        <item>Stay happy and joyful today</item>
+        <item>The first ray of sunshine belongs to you</item>
+        <item>Start a beautiful day with good mood</item>
+        <item>Good morning, may you always smile</item>
+        <item>Morning light glimmers, time stands still</item>
+        <item>A new day, new expectations</item>
+        <item>Rise early, shine bright</item>
+        <item>Morning dew, crystal clear</item>
+        <item>Good morning, live your life well</item>
+        <item>Morning breeze, refreshing mood</item>
+        <item>A new day, full of hope</item>
+        <item>Morning birdsong, pleasant to hear</item>
+        <item>Face challenges with positive attitude</item>
+        <item>Good morning, may everything go well</item>
+        <item>Dawn breaks, warm as always</item>
+        <item>Keep a good mood today</item>
+        <item>Morning serenity brings peace of mind</item>
+    </string-array>
+    
+    <!-- Healing Quotes - Afternoon -->
+    <string-array name="healing_quotes_afternoon">
+        <item>Afternoon time, enjoy the peace</item>
+        <item>Perfect sunshine, gentle breeze</item>
+        <item>Slow down, feel life\'s beauty</item>
+        <item>Afternoon sunshine, warm and cozy</item>
+        <item>Give yourself a moment to relax</item>
+        <item>Tea time, enjoy the leisure</item>
+        <item>Afternoon serenity, let your soul rest</item>
+        <item>Sunshine falls, time stands still</item>
+        <item>Slow living is true living</item>
+        <item>Afternoon breeze caresses the soul</item>
+        <item>Give yourself a hug</item>
+        <item>Good afternoon, remember to rest</item>
+        <item>Afternoon time, gentle and beautiful</item>
+        <item>Bright sunshine, pleasant mood</item>
+        <item>Take it slow, everything will come</item>
+        <item>Afternoon leisure, worth cherishing</item>
+        <item>Give your soul a break</item>
+        <item>Afternoon sunshine heals everything</item>
+        <item>Afternoon time, quietly enjoy</item>
+        <item>Perfect sunshine, seize the moment</item>
+        <item>Slow your pace, feel the present</item>
+        <item>Afternoon warmth, refreshing</item>
+        <item>Give yourself time to unwind</item>
+        <item>Good afternoon, stay relaxed</item>
+        <item>Afternoon serenity brings peace</item>
+        <item>Sunshine on body, warmth in heart</item>
+        <item>Slow living, slow enjoying</item>
+        <item>Afternoon time, beautiful and serene</item>
+        <item>Bright sunshine, peaceful time</item>
+        <item>Give your tired soul a rest</item>
+    </string-array>
+    
+    <!-- Healing Quotes - Evening -->
+    <string-array name="healing_quotes_evening">
+        <item>Good night, sweet dreams</item>
+        <item>It\'s late, time to rest</item>
+        <item>Stars don\'t ask travelers, time rewards the devoted</item>
+        <item>Evening breeze takes away the day\'s fatigue</item>
+        <item>Night\'s serenity lets the soul settle</item>
+        <item>Sleep well tonight, wake up energized tomorrow</item>
+        <item>Moonlight like water, gentle all night</item>
+        <item>Good night, have sweet dreams</item>
+        <item>Night is gentle, so are you</item>
+        <item>Let go of worries, rest well</item>
+        <item>Good night, may the world treat you gently</item>
+        <item>Deep night, perfect for emptying your mind</item>
+        <item>Stars light up, illuminate your dreams</item>
+        <item>Evening breeze brings good mood</item>
+        <item>Night\'s tranquility heals everything</item>
+        <item>May you sleep dreamlessly till dawn</item>
+        <item>Moonlight hazy, time peaceful</item>
+        <item>Good night, tomorrow is another beautiful day</item>
+        <item>Night like ink, gentle like you</item>
+        <item>Relax, enjoy the night\'s serenity</item>
+        <item>Good night, sleep well</item>
+        <item>It\'s late, let your soul rest</item>
+        <item>Starlight brilliant, lights the way forward</item>
+        <item>Evening breeze brings sweet dreams</item>
+        <item>Night\'s gentleness belongs to you</item>
+        <item>Sleep well tonight, better tomorrow</item>
+        <item>Moonlight bright, mood cheerful</item>
+        <item>Good night, be your true self</item>
+        <item>Night gentle, dreams gentle too</item>
+        <item>Let go of fatigue, embrace sweet dreams</item>
+    </string-array>
 </resources>

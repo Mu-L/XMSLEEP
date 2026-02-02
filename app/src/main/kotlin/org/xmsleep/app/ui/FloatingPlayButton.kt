@@ -367,17 +367,19 @@ fun FloatingPlayButtonNew(
     // 计算展开内容的高度（用于判断是否需要调整位置）
     val contentHeightPx = with(density) { contentHeight.toPx() }
     
-    // 限制Y轴范围（确保按钮不会超出屏幕）
+    // 限制Y轴范围（确保按钮不会超出屏幕，并避免被底部导航栏遮挡）
+    val bottomNavBarHeight = 88.dp // 底部导航栏高度（72dp）+ padding（16dp）
     val minY = 0f
-    val maxY = screenHeightPx - buttonHeightPx
+    val maxY = screenHeightPx - buttonHeightPx - with(density) { bottomNavBarHeight.toPx() }
     val clampedY = offsetY.coerceIn(minY, maxY)
     
-    // 展开时，如果内容会超出屏幕底部，则向上调整位置
+    // 展开时，如果内容会超出屏幕底部，则向上调整位置（考虑底部导航栏）
     val adjustedY = if (isExpanded) {
         val bottomEdge = clampedY + contentHeightPx
-        if (bottomEdge > screenHeightPx) {
-            // 内容会超出屏幕，向上调整
-            (screenHeightPx - contentHeightPx).coerceAtLeast(0f)
+        val maxBottomEdge = screenHeightPx - with(density) { bottomNavBarHeight.toPx() }
+        if (bottomEdge > maxBottomEdge) {
+            // 内容会超出屏幕或被底部导航栏遮挡，向上调整
+            (maxBottomEdge - contentHeightPx).coerceAtLeast(0f)
         } else {
             clampedY
         }

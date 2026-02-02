@@ -137,6 +137,9 @@ dependencies {
     // MaterialKolor - 动态主题色生成
     implementation("com.materialkolor:material-kolor:2.0.2")
     
+    // Palette - 从图片提取主题色
+    implementation("androidx.palette:palette-ktx:1.0.0")
+    
     // Coil - 图片加载
     implementation("io.coil-kt:coil-compose:2.6.0")
     
@@ -156,6 +159,10 @@ dependencies {
     
     // Gson - 用于JSON解析
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // Haze - 用于实现真正的毛玻璃效果（backdrop blur）
+    implementation("dev.chrisbanes.haze:haze:1.1.0")
+    implementation("dev.chrisbanes.haze:haze-materials:1.1.0")
     
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")

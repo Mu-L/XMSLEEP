@@ -58,10 +58,20 @@
 
 • 版权声明：本应用仅提供音频播放功能，不拥有任何音频内容的版权。所有音频内容仅供个人学习和娱乐使用，请勿用于商业用途。如您发现任何音频内容侵犯了您的版权，请联系我们，我们将及时处理。</string>
     <string name="technical_info_title">技术信息</string>
-    <string name="copyright">© 2025 XMSLEEP. All rights reserved.\n\n本应用提供的音频内容仅供个人学习和娱乐使用。\n请尊重相关音频资源的版权，不得用于商业用途。</string>
+    <string name="copyright">© XMSLEEP. All rights reserved.\n\n本应用提供的音频内容仅供个人学习和娱乐使用。\n请尊重相关音频资源的版权，不得用于商业用途。</string>
     <string name="hide_animation">隐藏WebP动画</string>
     <string name="hide_lottie_animation_in_sound_cards">隐藏声音卡片中的WebP动画</string>
-    <string name="white_noise_cards">白噪音卡片</string>
+    <string name="background_settings">背景设置</string>
+    <string name="background_animation">背景动画</string>
+    <string name="select_background">选择背景</string>
+    <string name="no_background">无背景</string>
+    <string name="background_1">背景 1</string>
+    <string name="background_2">背景 2</string>
+    <string name="background_3">背景 3</string>
+    <string name="background_4">背景 4</string>
+    <string name="background_5">背景 5</string>
+    <string name="background_preview">预览背景</string>
+    <string name="white_noise_cards">内置声音</string>
     <string name="builtin_sounds_offline_hint">内置声音无需联网直接听</string>
     <string name="selected_count">已选择（%1$d 个）</string>
     <string name="max_select_hint">最多可选3个到固定声音区域</string>
@@ -69,6 +79,9 @@
     <string name="cancel_batch_select">取消批量选择</string>
     <string name="default_playback_area">固定声音区域</string>
     <string name="click_play_button_to_play_all">便捷播放声音</string>
+    <string name="play_preset">播放预设</string>
+    <string name="pause_preset">暂停预设</string>
+    <string name="preset">预设</string>
     <string name="done">完成</string>
     <string name="max_3_sounds_limit">固定声音区域最多只能添加3个声音</string>
     <string name="default_area_updated">已更新固定声音区域</string>
@@ -187,6 +200,18 @@
 如有任何疑问，请通过应用内联系方式与我们联系。</string>
     <string name="wish_good_sleep">～愿你有个好梦～</string>
     
+    <!-- 自动倒计时 -->
+    <string name="auto_countdown">自动倒计时</string>
+    <string name="auto_countdown_description">播放预设后自动停止</string>
+    <string name="select_countdown_time">选择倒计时时间</string>
+    <string name="no_countdown">不设置</string>
+    <string name="countdown_30_minutes">30分钟</string>
+    <string name="countdown_45_minutes">45分钟</string>
+    <string name="countdown_60_minutes">60分钟</string>
+    <string name="countdown_1_hour">1小时</string>
+    <string name="countdown_2_hours">2小时</string>
+    <string name="current_setting">当前设置</string>
+    
     <!-- 浮动播放按钮 -->
     <string name="collapse">收起</string>
     <string name="expand">展开</string>
@@ -205,6 +230,7 @@
     <string name="preset_2">预设 2</string>
     <string name="preset_3">预设 3</string>
     <string name="preset_max_reached">当前预设已达到最多10个声音</string>
+    <string name="close">关闭</string>
     
     <!-- 预设空状态提示 -->
     <string name="preset_empty_hint">长按音频卡片添加到此预设</string>
@@ -275,4 +301,106 @@
     <string name="saving">保存中...</string>
     <string name="loading_quote">正在获取名句...</string>
     <string name="refresh_quote">换一句</string>
+    
+    <!-- 治愈句子 - 早上 -->
+    <string-array name="healing_quotes_morning">
+        <item>早安，愿你今天充满能量</item>
+        <item>新的一天，新的开始</item>
+        <item>晨光微露，美好如约而至</item>
+        <item>用微笑迎接崭新的一天</item>
+        <item>清晨的阳光，温暖你的心房</item>
+        <item>今天也要元气满满哦</item>
+        <item>早起的鸟儿有虫吃，加油</item>
+        <item>美好的一天从现在开始</item>
+        <item>愿你的每个早晨都充满希望</item>
+        <item>晨曦初现，万物复苏</item>
+        <item>早安，做最好的自己</item>
+        <item>新的一天，充满无限可能</item>
+        <item>清晨的风，带来好心情</item>
+        <item>今天也要开心快乐</item>
+        <item>早晨的第一缕阳光属于你</item>
+        <item>用好心情开启美好一天</item>
+        <item>早安，愿你笑容常在</item>
+        <item>晨光熹微，岁月静好</item>
+        <item>新的一天，新的期待</item>
+        <item>早起三光，晚起三慌</item>
+        <item>清晨的露珠，晶莹剔透</item>
+        <item>早安，今天也要努力生活</item>
+        <item>晨风轻拂，心情舒畅</item>
+        <item>新的一天，充满希望</item>
+        <item>早晨的鸟鸣，悦耳动听</item>
+        <item>用积极的心态迎接挑战</item>
+        <item>早安，愿你一切顺利</item>
+        <item>晨曦微露，温暖如初</item>
+        <item>今天也要保持好心情</item>
+        <item>清晨的宁静，让人心安</item>
+    </string-array>
+    
+    <!-- 治愈句子 - 中午 -->
+    <string-array name="healing_quotes_afternoon">
+        <item>午后时光，静享安宁</item>
+        <item>阳光正好，微风不燥</item>
+        <item>慢下来，感受生活的美好</item>
+        <item>午后的阳光，温暖而惬意</item>
+        <item>给自己一个放松的时刻</item>
+        <item>下午茶时间，享受悠闲</item>
+        <item>午后的宁静，让心灵休憩</item>
+        <item>阳光洒落，岁月静好</item>
+        <item>慢生活，才是真生活</item>
+        <item>午后的微风，轻抚心灵</item>
+        <item>给忙碌的自己一个拥抱</item>
+        <item>下午好，记得休息一下</item>
+        <item>午后时光，温柔而美好</item>
+        <item>阳光明媚，心情愉悦</item>
+        <item>慢慢来，一切都来得及</item>
+        <item>午后的悠闲，值得珍惜</item>
+        <item>给心灵放个假</item>
+        <item>下午的阳光，治愈一切</item>
+        <item>午后时光，静静享受</item>
+        <item>阳光正好，不负好时光</item>
+        <item>慢下脚步，感受当下</item>
+        <item>午后的温暖，沁人心脾</item>
+        <item>给自己一点时间放空</item>
+        <item>下午好，愿你轻松愉快</item>
+        <item>午后的宁静，让人安心</item>
+        <item>阳光洒在身上，暖在心里</item>
+        <item>慢生活，慢享受</item>
+        <item>午后时光，美好而宁静</item>
+        <item>阳光明媚，岁月静好</item>
+        <item>给疲惫的心灵一个休息</item>
+    </string-array>
+    
+    <!-- 治愈句子 - 晚上 -->
+    <string-array name="healing_quotes_evening">
+        <item>晚安，愿你好梦</item>
+        <item>夜深了，该休息了</item>
+        <item>星光不问赶路人，岁月不负有心人</item>
+        <item>晚风轻拂，带走一天的疲惫</item>
+        <item>夜晚的宁静，让心灵沉淀</item>
+        <item>愿你今夜安眠，明日醒来元气满满</item>
+        <item>月光如水，温柔了整个夜晚</item>
+        <item>晚安，做个好梦</item>
+        <item>夜色温柔，你也是</item>
+        <item>放下一天的烦恼，好好休息</item>
+        <item>晚安，愿你被世界温柔以待</item>
+        <item>夜深人静，适合放空自己</item>
+        <item>星星点灯，照亮你的梦</item>
+        <item>晚风习习，带来好心情</item>
+        <item>夜晚的静谧，治愈一切</item>
+        <item>愿你今夜无梦，一觉到天明</item>
+        <item>月色朦胧，岁月静好</item>
+        <item>晚安，明天又是美好的一天</item>
+        <item>夜色如墨，温柔如你</item>
+        <item>放松身心，享受夜晚的宁静</item>
+        <item>晚安，愿你睡个好觉</item>
+        <item>夜深了，让心灵休息</item>
+        <item>星光璀璨，照亮前行的路</item>
+        <item>晚风轻拂，带来好梦</item>
+        <item>夜晚的温柔，属于你</item>
+        <item>愿你今夜好眠，明日更好</item>
+        <item>月光皎洁，心情舒畅</item>
+        <item>晚安，做最真实的自己</item>
+        <item>夜色温柔，梦也温柔</item>
+        <item>放下疲惫，拥抱美梦</item>
+    </string-array>
 </resources>

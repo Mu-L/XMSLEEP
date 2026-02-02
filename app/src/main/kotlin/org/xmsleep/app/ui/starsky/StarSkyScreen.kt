@@ -1,5 +1,6 @@
 package org.xmsleep.app.ui.starsky
 
+import android.content.Context
 import android.os.Build
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -457,12 +458,41 @@ fun StarSkyScreen(
                         .fillMaxWidth()
                         .padding(12.dp)
                 ) {
-                    Text(
-                        text = "📋 加载日志（点击标题隐藏）",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "📋 加载日志（点击标题隐藏）",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        // 复制按钮
+                        TextButton(
+                            onClick = {
+                                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                val clip = android.content.ClipData.newPlainText("调试日志", debugLogs.joinToString("\n"))
+                                clipboardManager.setPrimaryClip(clip)
+                                Toast.makeText(context, "日志已复制到剪贴板", Toast.LENGTH_SHORT).show()
+                            },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "复制日志",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "复制",
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
+                    }
                     
                     Column(
                         modifier = Modifier
@@ -656,7 +686,7 @@ fun StarSkyScreen(
                     LazyColumn(
                         state = lazyListState,
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp),
+                        contentPadding = PaddingValues(bottom = 100.dp), // 增加底部 padding 避开悬浮导航栏
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                     sortedCategories.forEach { categoryId ->
@@ -850,7 +880,7 @@ fun StarSkyScreen(
                     LazyVerticalGrid(
                         state = lazyGridState,
                         columns = GridCells.Fixed(columnsCount),
-                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 16.dp),
+                        contentPadding = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 100.dp), // 增加底部 padding 避开悬浮导航栏
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()

@@ -67,7 +67,7 @@ fun SimpleSoundCard2Columns(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(
@@ -229,7 +229,7 @@ fun SimpleSoundCard3Columns(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(
@@ -384,7 +384,7 @@ fun QuickPlayCard(
             .height(80.dp)
             .clickable(enabled = !isEditMode) { onToggle(item.sound) },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         )
     ) {
         Box(

@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
@@ -312,6 +313,7 @@ fun FavoriteScreen(
     }
     
     Scaffold(
+        containerColor = Color.Transparent, // 透明背景，显示背景动画
         topBar = {
             TopAppBar(
                 title = {
@@ -336,15 +338,14 @@ fun FavoriteScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent, // 透明背景
                     titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 // TopAppBar 使用系统栏和显示区域切口，让标题向上移动
                 windowInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
                     .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
             )
-        },
-        containerColor = MaterialTheme.colorScheme.background
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -385,7 +386,7 @@ fun FavoriteScreen(
                 // 有收藏时显示卡片列表
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columnsCount),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp), // 增加底部 padding 避开悬浮导航栏
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     state = scrollState,

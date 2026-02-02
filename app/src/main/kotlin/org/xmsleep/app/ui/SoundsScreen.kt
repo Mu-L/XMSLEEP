@@ -48,6 +48,15 @@ import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.StarOutline
 import androidx.compose.material.icons.filled.CheckCircle
@@ -56,7 +65,6 @@ import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -79,10 +87,10 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
@@ -97,19 +105,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.Dialog
+import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.HazeStyle
 import android.graphics.ImageDecoder
 import android.graphics.drawable.AnimatedImageDrawable
 import android.os.Build
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.graphics.ColorFilter
@@ -143,7 +147,6 @@ import org.xmsleep.app.i18n.LanguageManager
 import org.xmsleep.app.update.UpdateViewModel
 import org.xmsleep.app.update.UpdateState
 import org.xmsleep.app.update.UpdateDialog
-import androidx.compose.runtime.DisposableEffect
 import com.materialkolor.hct.Hct
 import com.materialkolor.ktx.toHct
 import com.airbnb.lottie.value.LottieFrameInfo
@@ -275,6 +278,8 @@ data class SoundItem(
 fun SoundsScreen(
     modifier: Modifier = Modifier,
     hideAnimation: Boolean = false,
+    backgroundSelection: BackgroundSelection = BackgroundSelection.None,
+    onBackgroundSelectionChange: (BackgroundSelection) -> Unit = {},
     columnsCount: Int = 2,
     onColumnsCountChange: (Int) -> Unit = {},
     preset1Sounds: MutableState<MutableSet<AudioManager.Sound>>,
@@ -287,8 +292,12 @@ fun SoundsScreen(
     onNavigateToFavorite: () -> Unit = {},
     onScrollDetected: () -> Unit = {},
     onQuickPlayExpand: () -> Unit = {},
-    updateViewModel: UpdateViewModel? = null
+    updateViewModel: UpdateViewModel? = null,
+    hazeState: dev.chrisbanes.haze.HazeState? = null,
+    contentAlpha: Float = 1f // 内容透明度（用于禁用点击）
 ) {
+    // 预设弹窗显示状态
+    var showPresetDialog by remember { mutableStateOf(false) }
     // 根据 activePreset 动态获取当前预设的 pinnedSounds
     val pinnedSounds = when (activePreset) {
         1 -> preset1Sounds
@@ -317,6 +326,9 @@ fun SoundsScreen(
     
     // 各声音的播放状态
     val playingStates = remember { mutableStateMapOf<AudioManager.Sound, Boolean>() }
+    
+    // 追踪每个声音是从哪个预设播放的（用于在预设弹窗中只显示当前预设的播放状态）
+    val soundPlayingPreset = remember { mutableStateMapOf<AudioManager.Sound, Int>() }
     
     // 远程音频相关状态
     var remoteSounds by remember { mutableStateOf<List<org.xmsleep.app.audio.model.SoundMetadata>>(emptyList()) }
@@ -634,7 +646,24 @@ fun SoundsScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer { alpha = contentAlpha } // 应用透明度
+            .then(
+                // 当透明度为0时，禁用所有点击事件（除了灯泡按钮）
+                if (contentAlpha == 0f) {
+                    Modifier.pointerInput(Unit) {
+                        awaitEachGesture {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                } else {
+                    Modifier
+                }
+            )
+    ) {
         // 顶部标题、深色模式切换按钮和收藏按钮
         Row(
             modifier = Modifier
@@ -643,12 +672,27 @@ fun SoundsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 左侧：标题
-            Text(
-                text = "XMSLEEP",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold
-            )
+            // 左侧：标题和治愈句子
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = "XMSLEEP",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                // 治愈句子（根据时段随机显示，应用启动时生成，页面切换时不刷新）
+                // 使用 LanguageManager 的当前语言作为 key，确保语言切换时重新生成句子
+                val currentLanguage = org.xmsleep.app.i18n.LanguageManager.getCurrentLanguage(context)
+                val healingQuote = remember(currentLanguage) { 
+                    org.xmsleep.app.quote.HealingQuoteManager.getRandomQuote(context) 
+                }
+                Text(
+                    text = healingQuote,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
             
             // 右侧：更新图标和收藏按钮
             Row(
@@ -751,19 +795,27 @@ fun SoundsScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(
-                                text = context.getString(R.string.builtin_sounds_offline_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                            )
                         }
                     }
                     
-                    // 右侧按钮区域：只保留布局切换按钮
+                    // 右侧按钮区域：预设按钮 + 布局切换按钮
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // 预设按钮（只在有预设内容时显示）
+                        if (hasAnyPresetItems) {
+                            IconButton(
+                                onClick = { showPresetDialog = true } // 显示弹窗
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.grass_24px),
+                                    contentDescription = "预设",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        
                         // 布局切换按钮（2列/3列）
                         IconButton(
                             onClick = { 
@@ -779,9 +831,9 @@ fun SoundsScreen(
                                 contentDescription = if (columnsCount == 2) context.getString(R.string.switch_to_3_columns) else context.getString(R.string.switch_to_2_columns),
                                 tint = MaterialTheme.colorScheme.primary
                             )
+                        }
                     }
                 }
-            }
             
             // 内置声音内容
             BuiltInSoundsContent(
@@ -851,201 +903,268 @@ fun SoundsScreen(
             }
         }
         
-        // 底部弹出区域的高度偏移动画（从底部滑入）
-        val bottomSheetOffsetY by animateDpAsState(
-            targetValue = if (hasDefaultItems) {
-                0.dp // 有内容时显示在底部
-            } else {
-                300.dp // 没有内容时向下滑出屏幕
-            },
-            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-            label = "bottomSheetOffsetY"
-        )
-        
-        // 底部弹出的快捷播放（悬浮在内容之上，位于底部导航栏上方）
-        if (hasDefaultItems) {
-            val density = LocalDensity.current
-            val dragThreshold = with(density) { 20.dp.toPx() }
-            
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .offset(y = bottomSheetOffsetY)
-                    .background(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
-                    )
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) {
-                        // 拦截点击事件，防止穿透到后面的内容
-                    }
-
+        // 预设弹窗
+        if (showPresetDialog && hasDefaultItems) {
+            Dialog(
+                onDismissRequest = { showPresetDialog = false }
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f) // 使用95%的屏幕宽度
+                        .wrapContentHeight(),
+                    shape = RoundedCornerShape(28.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 6.dp
                 ) {
-                    // 顶部指示栏 - 独立的拖拽栏，用于展开/收缩（在标题栏上方）
-                    // 总高度：30dp（6dp padding + 24dp图标）
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp, bottom = 0.dp),
-                        contentAlignment = Alignment.Center
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
                     ) {
+                        // 标题栏：左侧标题 + 右侧编辑按钮
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 24.dp, end = 8.dp, top = 16.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = context.getString(R.string.preset),
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                            
+                            // 编辑按钮
+                            if (isDefaultAreaEditMode) {
+                                // 编辑模式下显示"完成"
+                                TextButton(
+                                    onClick = { isDefaultAreaEditMode = false }
+                                ) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(context.getString(R.string.done))
+                                        Icon(
+                                            imageVector = Icons.Default.Done,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            } else {
+                                // 默认状态显示笔图标
+                                IconButton(
+                                    onClick = { isDefaultAreaEditMode = true }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = context.getString(R.string.edit),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 预设内容区域
                         Box(
                             modifier = Modifier
-                                .size(30.dp)
-                                .clickable(
-                                    indication = null, // 移除波纹效果
-                                    interactionSource = remember { MutableInteractionSource() }
-                                ) { 
-                                    // 如果当前是编辑模式，先退出编辑模式
-                                    if (isDefaultAreaEditMode) {
-                                        isDefaultAreaEditMode = false
-                                    }
-                                    isQuickPlayExpanded = !isQuickPlayExpanded
-                                    org.xmsleep.app.preferences.PreferencesManager.saveQuickPlayExpanded(context, isQuickPlayExpanded)
-                                    
-                                    // 如果展开快捷播放，强制收缩悬浮播放按钮
-                                    if (isQuickPlayExpanded) {
-                                        onQuickPlayExpand()
+                                .fillMaxWidth()
+                                .weight(1f, fill = false) // 不强制填充，根据内容自适应
+                                .heightIn(max = 500.dp) // 最大高度限制
+                        ) {
+                            DefaultArea(
+                                soundItems = soundItems,
+                                pinnedSounds = pinnedSounds,
+                                favoriteSounds = favoriteSounds,
+                                playingStates = playingStates,
+                                soundPlayingPreset = soundPlayingPreset,
+                                audioManager = audioManager,
+                                context = context,
+                                isEditMode = isDefaultAreaEditMode,
+                                onEditModeChange = { isDefaultAreaEditMode = it },
+                                defaultAreaHasSounds = defaultAreaHasSounds,
+                                defaultAreaSoundsPlaying = defaultAreaSoundsPlaying,
+                                isExpanded = true, // 弹窗中始终展开
+                                activePreset = activePreset,
+                                onActivePresetChange = onActivePresetChange,
+                                showEditButton = false, // 弹窗中隐藏编辑按钮（已移到标题栏）
+                                onPinnedChange = { sound, isPinned ->
+                                    val currentSet = pinnedSounds.value.toMutableSet()
+                                    if (isPinned) {
+                                        val totalPinned = currentSet.size + remotePinned.size
+                                        if (totalPinned >= 10) {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                context.getString(R.string.preset_max_reached),
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            currentSet.add(sound)
+                                            playingStates[sound] = audioManager.isPlayingSound(sound)
+                                            pinnedSounds.value = currentSet
+                                        }
+                                    } else {
+                                        currentSet.remove(sound)
+                                        pinnedSounds.value = currentSet
                                     }
                                 },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            // 自定义箭头图标（粗的、角度小的V形箭头）
-                            CustomChevronIcon(
-                                isExpanded = isQuickPlayExpanded,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                    
-                    // 快捷播放内容区域（包含标题、按钮、卡片等）
-                    DefaultArea(
-                    soundItems = soundItems,
-                    pinnedSounds = pinnedSounds,
-                    favoriteSounds = favoriteSounds,
-                    playingStates = playingStates,
-                    audioManager = audioManager,
-                    context = context,
-                    isEditMode = isDefaultAreaEditMode,
-                    onEditModeChange = { isDefaultAreaEditMode = it },
-                    defaultAreaHasSounds = defaultAreaHasSounds,
-                    defaultAreaSoundsPlaying = defaultAreaSoundsPlaying,
-                    isExpanded = isQuickPlayExpanded,
-                    activePreset = activePreset,
-                    onActivePresetChange = onActivePresetChange,
-                    onPinnedChange = { sound, isPinned ->
-                        val currentSet = pinnedSounds.value.toMutableSet()
-                        if (isPinned) {
-                            // 检查是否已达到最大数量（10个，包括本地和远程）
-                            val totalPinned = currentSet.size + remotePinned.size
-                            if (totalPinned >= 10) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.preset_max_reached),
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                currentSet.add(sound)
-                                // 如果声音正在播放，立即同步播放状态
-                                playingStates[sound] = audioManager.isPlayingSound(sound)
-                                pinnedSounds.value = currentSet
-                            }
-                        } else {
-                            currentSet.remove(sound)
-                            pinnedSounds.value = currentSet
-                        }
-                    },
-                    onFavoriteChange = { sound, isFavorite ->
-                        val currentSet = favoriteSounds.value.toMutableSet()
-                        if (isFavorite) {
-                            currentSet.add(sound)
-                        } else {
-                            currentSet.remove(sound)
-                        }
-                        favoriteSounds.value = currentSet
-                    },
-                    // 远程音频相关参数
-                    remoteSounds = defaultRemoteSounds,
-                    remotePinned = remotePinned,
-                    downloadingSounds = downloadingSounds,
-                    playingRemoteSounds = playingRemoteSounds,
-                    onRemotePinnedChange = { soundId, isPinned ->
-                        val newSet = remotePinned.toMutableSet()
-                        if (isPinned) {
-                            // 检查是否已达到最大数量（10个，包括本地和远程）
-                            val totalPinned = pinnedSounds.value.size + newSet.size
-                            if (totalPinned >= 10) {
-                                android.widget.Toast.makeText(
-                                    context,
-                                    context.getString(R.string.preset_max_reached),
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            } else {
-                                newSet.add(soundId)
-                            }
-                        } else {
-                            newSet.remove(soundId)
-                        }
-                        remotePinned = newSet
-                        org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
-                    },
-                    onRemoteCardClick = { sound ->
-                        scope.launch {
-                            try {
-                                val cachedFile = cacheManager.getCachedFile(sound.id)
-                                if (cachedFile == null && sound.remoteUrl != null) {
-                                    // 开始下载
-                                    val downloadFlow = cacheManager.downloadAudioWithProgress(
-                                        sound.remoteUrl,
-                                        sound.id
-                                    )
-                                    downloadFlow.collect { progress ->
-                                        when (progress) {
-                                            is org.xmsleep.app.audio.DownloadProgress.Progress -> {
-                                                val percent = progress.bytesRead.toFloat() / progress.contentLength
-                                                downloadingSounds = downloadingSounds + (sound.id to percent)
-                                            }
-                                            is org.xmsleep.app.audio.DownloadProgress.Success -> {
-                                                downloadingSounds = downloadingSounds - sound.id
-                                                // 下载完成后自动播放
+                                onFavoriteChange = { sound, isFavorite ->
+                                    val currentSet = favoriteSounds.value.toMutableSet()
+                                    if (isFavorite) {
+                                        currentSet.add(sound)
+                                    } else {
+                                        currentSet.remove(sound)
+                                    }
+                                    favoriteSounds.value = currentSet
+                                },
+                                remoteSounds = defaultRemoteSounds,
+                                remotePinned = remotePinned,
+                                downloadingSounds = downloadingSounds,
+                                playingRemoteSounds = playingRemoteSounds,
+                                onRemotePinnedChange = { soundId, isPinned ->
+                                    val newSet = remotePinned.toMutableSet()
+                                    if (isPinned) {
+                                        val totalPinned = pinnedSounds.value.size + newSet.size
+                                        if (totalPinned >= 10) {
+                                            android.widget.Toast.makeText(
+                                                context,
+                                                context.getString(R.string.preset_max_reached),
+                                                android.widget.Toast.LENGTH_SHORT
+                                            ).show()
+                                        } else {
+                                            newSet.add(soundId)
+                                        }
+                                    } else {
+                                        newSet.remove(soundId)
+                                    }
+                                    remotePinned = newSet
+                                    org.xmsleep.app.preferences.PreferencesManager.savePresetRemotePinned(context, activePreset, newSet)
+                                },
+                                onRemoteCardClick = { sound ->
+                                    scope.launch {
+                                        try {
+                                            val cachedFile = cacheManager.getCachedFile(sound.id)
+                                            if (cachedFile == null && sound.remoteUrl != null) {
+                                                val downloadFlow = cacheManager.downloadAudioWithProgress(
+                                                    sound.remoteUrl,
+                                                    sound.id
+                                                )
+                                                downloadFlow.collect { progress ->
+                                                    when (progress) {
+                                                        is org.xmsleep.app.audio.DownloadProgress.Progress -> {
+                                                            val percent = progress.bytesRead.toFloat() / progress.contentLength
+                                                            downloadingSounds = downloadingSounds + (sound.id to percent)
+                                                        }
+                                                        is org.xmsleep.app.audio.DownloadProgress.Success -> {
+                                                            downloadingSounds = downloadingSounds - sound.id
+                                                            val uri = resourceManager.getSoundUri(sound)
+                                                            if (uri != null) {
+                                                                audioManager.playRemoteSound(context, sound, uri)
+                                                            }
+                                                        }
+                                                        is org.xmsleep.app.audio.DownloadProgress.Error -> {
+                                                            downloadingSounds = downloadingSounds - sound.id
+                                                            android.widget.Toast.makeText(context, context.getString(R.string.download_failed) + ": ${progress.exception.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    }
+                                                }
+                                            } else {
                                                 val uri = resourceManager.getSoundUri(sound)
                                                 if (uri != null) {
-                                                    audioManager.playRemoteSound(context, sound, uri)
+                                                    if (audioManager.isPlayingRemoteSound(sound.id)) {
+                                                        audioManager.pauseRemoteSound(sound.id)
+                                                    } else {
+                                                        audioManager.playRemoteSound(context, sound, uri)
+                                                    }
                                                 }
                                             }
-                                            is org.xmsleep.app.audio.DownloadProgress.Error -> {
-                                                downloadingSounds = downloadingSounds - sound.id
-                                                android.widget.Toast.makeText(context, context.getString(R.string.download_failed) + ": ${progress.exception.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                            }
+                                        } catch (e: Exception) {
+                                            android.widget.Toast.makeText(context, context.getString(R.string.load_failed, e.message ?: ""), android.widget.Toast.LENGTH_SHORT).show()
                                         }
                                     }
-                                } else {
-                                    // 已缓存，直接播放
-                                    val uri = resourceManager.getSoundUri(sound)
-                                    if (uri != null) {
-                                        if (audioManager.isPlayingRemoteSound(sound.id)) {
-                                            audioManager.pauseRemoteSound(sound.id)
-                                        } else {
-                                            audioManager.playRemoteSound(context, sound, uri)
+                                },
+                                getSoundDisplayName = { sound -> getSoundDisplayName(sound) },
+                                scope = scope,
+                                resourceManager = resourceManager
+                            )
+                        }
+                        
+                        // 底部按钮：播放/暂停 + 关闭
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 播放/暂停按钮
+                            TextButton(
+                                onClick = {
+                                    if (defaultAreaSoundsPlaying) {
+                                        // 暂停所有预设的声音（本地和远程）
+                                        pinnedSounds.value.forEach { sound ->
+                                            if (audioManager.isPlayingSound(sound)) {
+                                                audioManager.pauseSound(sound)
+                                                playingStates[sound] = false
+                                                soundPlayingPreset.remove(sound)
+                                            }
+                                        }
+                                        defaultRemoteSounds.forEach { sound ->
+                                            if (audioManager.isPlayingRemoteSound(sound.id)) {
+                                                audioManager.pauseRemoteSound(sound.id)
+                                            }
+                                        }
+                                    } else {
+                                        // 播放所有预设的声音（本地和远程）
+                                        pinnedSounds.value.forEach { sound ->
+                                            if (!audioManager.isPlayingSound(sound)) {
+                                                playingStates[sound] = true
+                                                soundPlayingPreset[sound] = activePreset // 记录从哪个预设播放
+                                                audioManager.playSound(context, sound)
+                                                // 延迟同步实际状态
+                                                scope.launch {
+                                                    delay(200)
+                                                    playingStates[sound] = audioManager.isPlayingSound(sound)
+                                                }
+                                            }
+                                        }
+                                        // 远程音频需要先下载，这里只播放已缓存的
+                                        scope.launch {
+                                            defaultRemoteSounds.filter { remotePinned.contains(it.id) }.forEach { sound ->
+                                                if (!audioManager.isPlayingRemoteSound(sound.id)) {
+                                                    val uri = resourceManager.getSoundUri(sound)
+                                                    if (uri != null) {
+                                                        audioManager.playRemoteSound(context, sound, uri)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        
+                                        // 检查是否设置了自动倒计时
+                                        val autoCountdownMinutes = org.xmsleep.app.preferences.PreferencesManager.getAutoCountdownMinutes(context)
+                                        if (autoCountdownMinutes > 0) {
+                                            // 自动启动倒计时
+                                            scope.launch {
+                                                delay(500) // 等待声音开始播放
+                                                timerManager.startTimer(autoCountdownMinutes)
+                                            }
                                         }
                                     }
                                 }
-                            } catch (e: Exception) {
-                                android.widget.Toast.makeText(context, context.getString(R.string.load_failed, e.message ?: ""), android.widget.Toast.LENGTH_SHORT).show()
+                            ) {
+                                Text(
+                                    text = if (defaultAreaSoundsPlaying) {
+                                        context.getString(R.string.pause_preset)
+                                    } else {
+                                        context.getString(R.string.play_preset)
+                                    }
+                                )
+                            }
+                            // 关闭按钮
+                            TextButton(onClick = { showPresetDialog = false }) {
+                                Text(context.getString(R.string.close))
                             }
                         }
-                    },
-                    getSoundDisplayName = { sound -> getSoundDisplayName(sound) },
-                    scope = scope,
-                    resourceManager = resourceManager
-                )
+                    }
                 }
             }
         }
@@ -1057,29 +1176,102 @@ fun SoundsScreen(
             label = "timerFABOffsetX"
         )
         
-        // 倒计时按钮的底部padding动画（与预设模块保持30dp间隔）
-        // 顶部箭头栏：30dp（6dp padding + 24dp图标）
-        // Tab栏+按钮：约72dp
-        // 卡片区域：约104dp
-        val arrowBarHeight = 30.dp // 顶部箭头栏高度
-        val contentHeight = 72.dp + 104.dp // Tab栏+按钮+卡片区域的总高度
+        // 预设播放FAB的偏移动画（滚动时滑出到边缘外）
+        val presetPlayFABOffsetX by animateDpAsState(
+            targetValue = if (!isScrolling) 0.dp else 60.dp,
+            animationSpec = tween(durationMillis = 300),
+            label = "presetPlayFABOffsetX"
+        )
         
+        // 底部导航栏高度（72dp导航栏 + 16dp padding）
+        val bottomNavBarHeight = 88.dp
+        
+        // 预设播放FAB的底部间距（在倒计时FAB上方，距离底部导航栏30dp）
+        val presetPlayFABBottomPadding by animateDpAsState(
+            targetValue = if (hasDefaultItems) {
+                bottomNavBarHeight + 30.dp // 距离底部导航栏30dp
+            } else {
+                0.dp // 没有预设时不显示
+            },
+            animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+            label = "presetPlayFABBottomPadding"
+        )
+        
+        // 倒计时FAB的底部间距
         val timerFABBottomPadding by animateDpAsState(
             targetValue = if (hasDefaultItems) {
-                if (isQuickPlayExpanded) {
-                    // 展开状态：箭头 + 内容 + 30dp间隔
-                    arrowBarHeight + contentHeight + 30.dp
-                } else {
-                    // 收缩状态：只有箭头 + 30dp间隔
-                    arrowBarHeight + 30.dp
-                }
+                // 有预设时：在预设播放FAB下方，间隔16dp
+                bottomNavBarHeight + 30.dp + 56.dp + 16.dp
             } else {
-                // 没有预设内容时复位到底部
-                16.dp
+                // 没有预设时：距离底部导航栏30dp
+                bottomNavBarHeight + 30.dp
             },
             animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
             label = "timerFABBottomPadding"
         )
+        
+        // 预设播放FAB（只在有预设音频时显示，位于倒计时FAB上方）
+        if (hasDefaultItems) {
+            PresetPlayFAB(
+                isPlaying = defaultAreaSoundsPlaying,
+                onClick = {
+                    if (defaultAreaSoundsPlaying) {
+                        // 暂停所有快捷播放的声音（本地和远程）
+                        pinnedSounds.value.forEach { sound ->
+                            if (audioManager.isPlayingSound(sound)) {
+                                audioManager.pauseSound(sound)
+                                playingStates[sound] = false
+                                soundPlayingPreset.remove(sound)
+                            }
+                        }
+                        defaultRemoteSounds.forEach { sound ->
+                            if (audioManager.isPlayingRemoteSound(sound.id)) {
+                                audioManager.pauseRemoteSound(sound.id)
+                            }
+                        }
+                    } else {
+                        // 播放所有快捷播放的声音（本地和远程）
+                        pinnedSounds.value.forEach { sound ->
+                            if (!audioManager.isPlayingSound(sound)) {
+                                playingStates[sound] = true
+                                soundPlayingPreset[sound] = activePreset // 记录从哪个预设播放
+                                audioManager.playSound(context, sound)
+                                // 延迟同步实际状态
+                                scope.launch {
+                                    delay(200)
+                                    playingStates[sound] = audioManager.isPlayingSound(sound)
+                                }
+                            }
+                        }
+                        // 远程音频需要先下载，这里只播放已缓存的
+                        scope.launch {
+                            defaultRemoteSounds.filter { remotePinned.contains(it.id) }.forEach { sound ->
+                                if (!audioManager.isPlayingRemoteSound(sound.id)) {
+                                    val uri = resourceManager.getSoundUri(sound)
+                                    if (uri != null) {
+                                        audioManager.playRemoteSound(context, sound, uri)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 检查是否设置了自动倒计时
+                        val autoCountdownMinutes = org.xmsleep.app.preferences.PreferencesManager.getAutoCountdownMinutes(context)
+                        if (autoCountdownMinutes > 0) {
+                            // 自动启动倒计时
+                            scope.launch {
+                                delay(500) // 等待声音开始播放
+                                timerManager.startTimer(autoCountdownMinutes)
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = presetPlayFABBottomPadding, end = 16.dp)
+                    .offset(x = presetPlayFABOffsetX)
+            )
+        }
         
         TimerFAB(
             isTimerActive = isTimerActive,
@@ -1138,6 +1330,7 @@ private fun DefaultArea(
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
     favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     playingStates: MutableMap<AudioManager.Sound, Boolean>,
+    soundPlayingPreset: MutableMap<AudioManager.Sound, Int>, // 追踪每个声音从哪个预设播放
     audioManager: AudioManager,
     context: android.content.Context,
     isEditMode: Boolean,
@@ -1150,6 +1343,7 @@ private fun DefaultArea(
     onPinnedChange: (AudioManager.Sound, Boolean) -> Unit,
     onFavoriteChange: (AudioManager.Sound, Boolean) -> Unit,
     onEnterBatchSelectMode: () -> Unit = {},
+    showEditButton: Boolean = true, // 是否显示编辑按钮（弹窗中隐藏）
     // 远程音频相关参数
     remoteSounds: List<org.xmsleep.app.audio.model.SoundMetadata> = emptyList(),
     remotePinned: MutableSet<String> = mutableSetOf(),
@@ -1194,55 +1388,90 @@ private fun DefaultArea(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 左侧：预设 Tab 切换（支持左右滑动）
-            ScrollableTabRow(
-                selectedTabIndex = activePreset - 1,
+            Row(
                 modifier = Modifier.weight(1f),
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-                edgePadding = 0.dp,
-                divider = {}
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // 预设1
-                Tab(
-                    selected = activePreset == 1,
+                Surface(
                     onClick = { onActivePresetChange(1) },
-                    text = {
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (activePreset == 1) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        Color.Transparent
+                    },
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = context.getString(R.string.preset_1),
-                            fontWeight = if (activePreset == 1) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (activePreset == 1) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 1) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    }
+                }
                 
                 // 预设2
-                Tab(
-                    selected = activePreset == 2,
+                Surface(
                     onClick = { onActivePresetChange(2) },
-                    text = {
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (activePreset == 2) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        Color.Transparent
+                    },
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = context.getString(R.string.preset_2),
-                            fontWeight = if (activePreset == 2) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (activePreset == 2) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 2) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    }
+                }
                 
                 // 预设3
-                Tab(
-                    selected = activePreset == 3,
+                Surface(
                     onClick = { onActivePresetChange(3) },
-                    text = {
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (activePreset == 3) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        Color.Transparent
+                    },
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = context.getString(R.string.preset_3),
-                            fontWeight = if (activePreset == 3) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (activePreset == 3) FontWeight.Bold else FontWeight.Normal,
+                            color = if (activePreset == 3) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
-                    },
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    }
+                }
             }
             
             // 右侧按钮区域：编辑按钮和播放按钮
@@ -1250,127 +1479,64 @@ private fun DefaultArea(
                 horizontalArrangement = Arrangement.spacedBy(30.dp), // 增加到30dp
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 编辑按钮（在播放按钮左侧）
-                // 收缩状态下不可点击，只有展开状态下才能使用
-                val editButtonAlpha = if (isExpanded) 1f else 0.4f
-                if (isEditMode) {
-                    // 编辑模式下显示"完成"文字+图标
-                    Surface(
-                        onClick = { 
-                            if (isExpanded) {
-                                onEditModeChange(!isEditMode)
-                            }
-                        },
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier
-                            .height(40.dp) // 固定高度与IconButton一致
-                            .alpha(editButtonAlpha)
-                    ) {
-                        Row(
+                // 编辑按钮（在播放按钮左侧）- 只在showEditButton为true时显示
+                if (showEditButton) {
+                    // 收缩状态下不可点击，只有展开状态下才能使用
+                    val editButtonAlpha = if (isExpanded) 1f else 0.4f
+                    if (isEditMode) {
+                        // 编辑模式下显示"完成"文字+图标
+                        Surface(
+                            onClick = { 
+                                if (isExpanded) {
+                                    onEditModeChange(!isEditMode)
+                                }
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
                             modifier = Modifier
-                                .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .fillMaxHeight(),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .height(40.dp) // 固定高度与IconButton一致
+                                .alpha(editButtonAlpha)
                         ) {
-                            Text(
-                                text = context.getString(R.string.done),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Done,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                                    .fillMaxHeight(),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = context.getString(R.string.done),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Done,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
-                    }
-                } else {
-                    // 默认状态只显示笔图标
-                    IconButton(
-                        onClick = { 
-                            if (isExpanded) {
-                                onEditModeChange(!isEditMode)
-                            }
-                        },
-                        enabled = isExpanded,
-                        modifier = Modifier
-                            .size(40.dp)
-                            .alpha(editButtonAlpha)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = context.getString(R.string.edit),
-                            tint = if (isExpanded) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
-                    }
-                }
-                
-                // 播放按钮（放在最右侧，添加背景使其更明显）
-                if (defaultAreaHasSounds) {
-                    Surface(
-                        onClick = {
-                            if (defaultAreaSoundsPlaying) {
-                                // 暂停所有快捷播放的声音（本地和远程）
-                                pinnedSounds.value.forEach { sound ->
-                                    if (audioManager.isPlayingSound(sound)) {
-                                        audioManager.pauseSound(sound)
-                                        playingStates[sound] = false
-                                    }
+                    } else {
+                        // 默认状态只显示笔图标
+                        IconButton(
+                            onClick = { 
+                                if (isExpanded) {
+                                    onEditModeChange(!isEditMode)
                                 }
-                                remoteSounds.forEach { sound ->
-                                    if (audioManager.isPlayingRemoteSound(sound.id)) {
-                                        audioManager.pauseRemoteSound(sound.id)
-                                    }
-                                }
-                            } else {
-                                // 播放所有快捷播放的声音（本地和远程）
-                                pinnedSounds.value.forEach { sound ->
-                                    if (!audioManager.isPlayingSound(sound)) {
-                                        playingStates[sound] = true
-                                        audioManager.playSound(context, sound)
-                                        // 延迟同步实际状态
-                                        scope.launch {
-                                            delay(200)
-                                            playingStates[sound] = audioManager.isPlayingSound(sound)
-                                        }
-                                    }
-                                }
-                                // 远程音频需要先下载，这里只播放已缓存的
-                                scope.launch {
-                                    remoteSounds.filter { remotePinned.contains(it.id) }.forEach { sound ->
-                                        if (!audioManager.isPlayingRemoteSound(sound.id)) {
-                                            val uri = resourceManager.getSoundUri(sound)
-                                            if (uri != null) {
-                                                audioManager.playRemoteSound(context, sound, uri)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            },
+                            enabled = isExpanded,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .alpha(editButtonAlpha)
                         ) {
                             Icon(
-                                imageVector = if (defaultAreaSoundsPlaying) {
-                                    Icons.Filled.Pause
-                                } else {
-                                    Icons.Filled.PlayArrow
-                                },
-                                contentDescription = if (defaultAreaSoundsPlaying) context.getString(R.string.pause) else context.getString(R.string.play),
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(24.dp)
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = context.getString(R.string.edit),
+                                tint = if (isExpanded) 
+                                    MaterialTheme.colorScheme.primary 
+                                else 
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
                     }
@@ -1424,6 +1590,7 @@ private fun DefaultArea(
                             modifier = Modifier.width(100.dp), // 横向滚动时固定卡片宽度
                             item = item,
                             isPlaying = playingStates[item.sound] ?: false,
+                            showPlayingIndicator = (playingStates[item.sound] == true) && (soundPlayingPreset[item.sound] == activePreset),
                             isFavorite = favoriteSounds.value.contains(item.sound),
                             isEditMode = isEditMode,
                             onToggle = { sound ->
@@ -1434,10 +1601,12 @@ private fun DefaultArea(
                                     android.util.Log.d("SoundsScreen", "暂停播放: ${sound.name}")
                                     audioManager.pauseSound(sound)
                                     playingStates[sound] = false
+                                    soundPlayingPreset.remove(sound)
                                 } else {
                                     android.util.Log.d("SoundsScreen", "开始播放: ${sound.name}")
                                     // 先设置状态为true，表示正在启动播放
                                     playingStates[sound] = true
+                                    soundPlayingPreset[sound] = activePreset // 记录从哪个预设播放
                                     audioManager.playSound(context, sound)
                                     // 延迟一小段时间后同步实际状态，确保状态正确
                                     scope.launch {
@@ -1581,6 +1750,7 @@ private fun DefaultCard(
     modifier: Modifier = Modifier,
     item: SoundItem,
     isPlaying: Boolean,
+    showPlayingIndicator: Boolean = isPlaying, // 是否显示播放指示器（3条竖杠）
     isFavorite: Boolean,
     isEditMode: Boolean = false,
     onToggle: (AudioManager.Sound) -> Unit,
@@ -1600,7 +1770,7 @@ private fun DefaultCard(
             .height(80.dp)
             .clickable(enabled = !isEditMode) { onToggle(item.sound) },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f)
         )
     ) {
         Box(
@@ -1638,10 +1808,10 @@ private fun DefaultCard(
                 overflow = TextOverflow.Ellipsis
             )
             
-            // 音频可视化器（左下角，三条竖线动画，只在播放时显示）
-            if (isPlaying) {
+            // 音频可视化器（左下角，三条竖线动画，只在当前预设播放时显示）
+            if (showPlayingIndicator) {
                 AudioVisualizer(
-                    isPlaying = isPlaying,
+                    isPlaying = true,
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .size(24.dp, 16.dp)
@@ -1681,7 +1851,7 @@ private fun BuiltInSoundsContent(
         if (normalItems.isNotEmpty()) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columnsCount),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 8.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp, top = 8.dp), // 增加底部 padding 避开悬浮导航栏
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 state = scrollState,
@@ -1838,7 +2008,7 @@ private fun FavoriteSoundsContent(
         // 有收藏时显示卡片列表
         LazyVerticalGrid(
             columns = GridCells.Fixed(columnsCount),
-            contentPadding = PaddingValues(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 100.dp, top = 16.dp), // 增加底部 padding 避开悬浮导航栏
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             state = scrollState,
@@ -2007,7 +2177,7 @@ fun SoundCard(
                 )
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         )
     ) {
         Box(
@@ -2693,6 +2863,49 @@ private fun TimerFAB(
             }
         }
     }
+}
+
+/**
+ * 预设播放FAB组件
+ * 使用ExtendedFloatingActionButton显示图标+文字
+ */
+@Composable
+private fun PresetPlayFAB(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    
+    ExtendedFloatingActionButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = if (isPlaying) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.primary
+        },
+        contentColor = if (isPlaying) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onPrimary
+        },
+        icon = {
+            Icon(
+                imageVector = if (isPlaying) {
+                    Icons.Filled.Pause
+                } else {
+                    Icons.Filled.PlayArrow
+                },
+                contentDescription = null
+            )
+        },
+        text = {
+            Text(
+                text = context.getString(R.string.preset) // 简化为"预设"
+            )
+        }
+    )
 }
 
 /**

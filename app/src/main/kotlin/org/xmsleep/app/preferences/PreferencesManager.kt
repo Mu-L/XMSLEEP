@@ -46,6 +46,10 @@ object PreferencesManager {
     private const val KEY_RECENT_LOCAL_AUDIO_FILES = "recent_local_audio_files"
     // 音量设置前缀
     private const val KEY_VOLUME_PREFIX = "volume_"
+    // 背景动画选择
+    private const val KEY_BACKGROUND_SELECTION = "background_animation_selection"
+    // 自动倒计时时间（分钟）
+    private const val KEY_AUTO_COUNTDOWN_MINUTES = "auto_countdown_minutes"
     
     /**
      * 从旧版本迁移数据（如果存在）
@@ -171,7 +175,7 @@ object PreferencesManager {
     /**
      * 获取动态颜色设置
      */
-    fun getUseDynamicColor(context: Context, default: Boolean = false): Boolean {
+    fun getUseDynamicColor(context: Context, default: Boolean = true): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getBoolean(KEY_USE_DYNAMIC_COLOR, default)
     }
@@ -591,6 +595,43 @@ object PreferencesManager {
     fun getLocalAudioVolume(context: Context, audioId: Long, default: Float = 0.5f): Float {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         return prefs.getFloat("${KEY_VOLUME_PREFIX}audio_$audioId", default)
+    }
+    
+    /**
+     * 保存背景动画选择
+     * @param selection 背景选择枚举
+     */
+    fun saveBackgroundSelection(context: Context, selection: org.xmsleep.app.ui.BackgroundSelection) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putString(KEY_BACKGROUND_SELECTION, selection.value).apply()
+    }
+    
+    /**
+     * 获取背景动画选择
+     * @return 背景选择枚举，默认为 None
+     */
+    fun getBackgroundSelection(context: Context): org.xmsleep.app.ui.BackgroundSelection {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val value = prefs.getString(KEY_BACKGROUND_SELECTION, "none") ?: "none"
+        return org.xmsleep.app.ui.BackgroundSelection.fromValue(value)
+    }
+    
+    /**
+     * 保存自动倒计时时间（分钟）
+     * @param minutes 倒计时分钟数，0 表示不设置倒计时
+     */
+    fun saveAutoCountdownMinutes(context: Context, minutes: Int) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putInt(KEY_AUTO_COUNTDOWN_MINUTES, minutes).apply()
+    }
+    
+    /**
+     * 获取自动倒计时时间（分钟）
+     * @return 倒计时分钟数，0 表示不设置倒计时
+     */
+    fun getAutoCountdownMinutes(context: Context): Int {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getInt(KEY_AUTO_COUNTDOWN_MINUTES, 0)
     }
 }
 
