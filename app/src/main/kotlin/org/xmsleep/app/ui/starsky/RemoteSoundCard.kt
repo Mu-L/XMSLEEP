@@ -50,7 +50,8 @@ fun RemoteSoundCard(
     onVolumeClick: () -> Unit,
     cardHeight: Dp? = null,
     isEditMode: Boolean = false,
-    onRemove: () -> Unit = {}
+    onRemove: () -> Unit = {},
+    isInPresetDialog: Boolean = false // 新增参数：是否在预设弹窗中
 ) {
     val context = LocalContext.current
     val cacheManager = remember { 
@@ -104,10 +105,20 @@ fun RemoteSoundCard(
         label = "alpha"
     )
     
-    val cardBackgroundColor = if (isCached) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) // 已下载使用较深的背景色，与未下载角标颜色一致
+    val cardBackgroundColor = if (isInPresetDialog) {
+        // 预设弹窗中：使用完全不透明的背景色，适配主题
+        if (isCached) {
+            MaterialTheme.colorScheme.surfaceContainer // 已下载使用较深的背景色
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerLow // 未下载使用较浅的背景色
+        }
     } else {
-        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f) // 未下载使用正常背景色
+        // 繁星页面中：使用半透明背景色
+        if (isCached) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.3f) // 已下载使用较深的背景色
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // 未下载使用正常背景色
+        }
     }
     
     var showTitleMenu by remember { mutableStateOf(false) }

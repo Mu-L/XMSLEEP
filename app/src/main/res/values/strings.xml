@@ -106,12 +106,12 @@
     <string name="adjust_volume_for">调节音量 - %1$s</string>
     <string name="cancel_countdown">取消倒计时</string>
     <string name="minutes">%1$d分钟</string>
-    <string name="set_as_default">固定</string>
-    <string name="cancel_default">取消固定</string>
+    <string name="set_as_default">添加预设</string>
+    <string name="cancel_default">取消预设</string>
     <string name="favorite">收藏</string>
     <string name="cancel_favorite">取消收藏</string>
-    <string name="pinned_success">已固定</string>
-    <string name="unpinned_success">已取消固定</string>
+    <string name="pinned_success">已添加预设</string>
+    <string name="unpinned_success">已取消预设</string>
     <string name="favorited_success">已收藏</string>
     <string name="unfavorited_success">已取消收藏</string>
     <string name="current_countdown">当前倒计时: %1$s</string>
@@ -202,7 +202,7 @@
     
     <!-- 自动倒计时 -->
     <string name="auto_countdown">自动倒计时</string>
-    <string name="auto_countdown_description">播放预设后自动停止</string>
+    <string name="auto_countdown_description">播放预设自动开始计时</string>
     <string name="select_countdown_time">选择倒计时时间</string>
     <string name="no_countdown">不设置</string>
     <string name="countdown_30_minutes">30分钟</string>

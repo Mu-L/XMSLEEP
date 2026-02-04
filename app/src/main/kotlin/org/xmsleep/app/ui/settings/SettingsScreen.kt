@@ -518,7 +518,7 @@ fun SettingsScreen(
                 // 灯泡按钮（添加圆角矩形背景）
                 Surface(
                     onClick = { showPullRing = !showPullRing },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(40.dp),
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                 ) {
@@ -527,10 +527,10 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
-                            imageVector = if (isContentHidden) Icons.Default.LightMode else Icons.Default.Lightbulb,
+                            painter = painterResource(id = R.drawable.light_24px),
                             contentDescription = if (isContentHidden) "显示内容" else "隐藏内容",
                             tint = if (isContentHidden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
@@ -562,19 +562,19 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Timer,
                             contentDescription = "倒计时",
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Text(
                             text = formatTimeLeft(timeLeftMillis),
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )

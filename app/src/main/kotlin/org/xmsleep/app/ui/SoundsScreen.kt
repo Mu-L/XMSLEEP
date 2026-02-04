@@ -1117,14 +1117,10 @@ fun SoundsScreen(
                                         // 播放所有预设的声音（本地和远程）
                                         pinnedSounds.value.forEach { sound ->
                                             if (!audioManager.isPlayingSound(sound)) {
-                                                playingStates[sound] = true
                                                 soundPlayingPreset[sound] = activePreset // 记录从哪个预设播放
                                                 audioManager.playSound(context, sound)
-                                                // 延迟同步实际状态
-                                                scope.launch {
-                                                    delay(200)
-                                                    playingStates[sound] = audioManager.isPlayingSound(sound)
-                                                }
+                                                // 立即更新状态，不延迟
+                                                playingStates[sound] = true
                                             }
                                         }
                                         // 远程音频需要先下载，这里只播放已缓存的
@@ -1233,14 +1229,10 @@ fun SoundsScreen(
                         // 播放所有快捷播放的声音（本地和远程）
                         pinnedSounds.value.forEach { sound ->
                             if (!audioManager.isPlayingSound(sound)) {
-                                playingStates[sound] = true
                                 soundPlayingPreset[sound] = activePreset // 记录从哪个预设播放
                                 audioManager.playSound(context, sound)
-                                // 延迟同步实际状态
-                                scope.launch {
-                                    delay(200)
-                                    playingStates[sound] = audioManager.isPlayingSound(sound)
-                                }
+                                // 立即更新状态，不延迟
+                                playingStates[sound] = true
                             }
                         }
                         // 远程音频需要先下载，这里只播放已缓存的
@@ -1578,7 +1570,7 @@ private fun DefaultArea(
             // 用户通过长按卡片来添加到预设
             
             LazyRow(
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp, vertical = 12.dp), // 左对齐，移除左侧padding
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -1697,7 +1689,8 @@ private fun DefaultArea(
                             onRemove = {
                                 // 删除（取消置顶）
                                 onRemotePinnedChange(sound.id, false)
-                            }
+                            },
+                            isInPresetDialog = true // 在预设弹窗中，使用不透明背景
                             )
                         }
                     }

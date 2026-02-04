@@ -689,7 +689,11 @@ fun MainScreen(
             
             composable("quoteHistory") {
                 org.xmsleep.app.quote.QuoteHistoryScreen(
-                    onBack = { navigator.popBackStack() }
+                    onBack = { navigator.popBackStack() },
+                    onScrollDetected = {
+                        // 滚动时收缩悬浮按钮
+                        shouldCollapseFloatingButton = true
+                    }
                 )
             }
         }

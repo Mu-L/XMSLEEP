@@ -104,12 +104,12 @@
     <string name="adjust_volume_for">Adjust Volume - %1$s</string>
     <string name="cancel_countdown">Cancel Countdown</string>
     <string name="minutes">%1$d minutes</string>
-    <string name="set_as_default">Pin</string>
-    <string name="cancel_default">Unpin</string>
+    <string name="set_as_default">Add to Preset</string>
+    <string name="cancel_default">Remove from Preset</string>
     <string name="favorite">Favorite</string>
     <string name="cancel_favorite">Unfavorite</string>
-    <string name="pinned_success">Pinned</string>
-    <string name="unpinned_success">Unpinned</string>
+    <string name="pinned_success">Added to Preset</string>
+    <string name="unpinned_success">Removed from Preset</string>
     <string name="favorited_success">Favorited</string>
     <string name="unfavorited_success">Unfavorited</string>
     <string name="current_countdown">Current countdown: %1$s</string>
@@ -181,7 +181,7 @@ If you have any questions, please contact us through the in-app contact method.<
     
     <!-- Auto Countdown -->
     <string name="auto_countdown">Auto Countdown</string>
-    <string name="auto_countdown_description">Auto stop after playing preset</string>
+    <string name="auto_countdown_description">Auto start timer when playing preset</string>
     <string name="select_countdown_time">Select Countdown Time</string>
     <string name="no_countdown">No Countdown</string>
     <string name="countdown_30_minutes">30 Minutes</string>
