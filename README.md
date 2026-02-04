@@ -220,6 +220,6 @@ XMSLEEP 是一个专注于白噪音播放的 Android 应用，提供多种自然
 
 **⭐ 如果这个项目对您有帮助，请给个 Star！**
 
-© 2025 XMSLEEP. All rights reserved.
+© 2026 XMSLEEP. All rights reserved.
 
 </div>
