@@ -68,6 +68,7 @@ fun SettingsScreen(
     onNavigateToTheme: () -> Unit,
     onNavigateToSounds: () -> Unit = {},
     onNavigateToQuoteHistory: () -> Unit = {},
+    onNavigateToFlipClock: () -> Unit = {},
     pinnedSounds: MutableState<MutableSet<AudioManager.Sound>>,
     favoriteSounds: MutableState<MutableSet<AudioManager.Sound>>,
     locationPermissionLauncher: androidx.activity.compose.ManagedActivityResultLauncher<String, Boolean>,
@@ -387,10 +388,22 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { showAutoCountdownDialog = true }
+                ),
+                SettingsCategoryItem(
+                    icon = Icons.Default.Timer,
+                    title = { Text(context.getString(R.string.flip_clock)) },
+                    description = {
+                        Text(
+                            context.getString(R.string.flip_clock_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    onClick = { onNavigateToFlipClock() }
                 )
             )
         )
-        
+
         Spacer(Modifier.height(8.dp))
         
         // 其他

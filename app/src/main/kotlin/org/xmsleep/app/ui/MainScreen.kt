@@ -1,5 +1,6 @@
 package org.xmsleep.app.ui
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -20,6 +21,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -38,6 +42,7 @@ import org.xmsleep.app.ui.settings.SettingsScreen
 import org.xmsleep.app.ui.settings.ThemeSettingsScreen
 import org.xmsleep.app.ui.starsky.StarSkyScreen
 import org.xmsleep.app.ui.breathing.BreathingScreen
+import org.xmsleep.app.ui.flipclock.FlipClockScreen
 import org.xmsleep.app.update.UpdateDialog
 import org.xmsleep.app.utils.Logger
 import androidx.compose.ui.graphics.Color
@@ -435,8 +440,29 @@ fun MainScreen(
     // 监听当前路由，判断是否在二级页面
     val currentBackStackEntry by navigator.navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val isInSecondaryPage = currentRoute in listOf("theme", "favorite", "local_audio", "quoteHistory")
+    val isInSecondaryPage = currentRoute in listOf("theme", "favorite", "local_audio", "quoteHistory", "flipclock")
     val isMainRoute = !isInSecondaryPage  // 主页面 = 不在二级页面
+    val isFlipClockPage = currentRoute == "flipclock"
+    
+    // 翻页时钟页面隐藏系统栏（延迟2秒执行）
+    var systemBarHidden by remember { mutableStateOf(false) }
+    LaunchedEffect(isFlipClockPage) {
+        if (isFlipClockPage) {
+            delay(2000) // 延迟2秒隐藏系统栏
+            systemBarHidden = true
+            mainActivity?.window?.let { window ->
+                val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                windowInsetsController?.hide(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+                windowInsetsController?.systemBarsBehavior = androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            systemBarHidden = false
+            mainActivity?.window?.let { window ->
+                val windowInsetsController = androidx.core.view.WindowCompat.getInsetsController(window, window.decorView)
+                windowInsetsController?.show(androidx.core.view.WindowInsetsCompat.Type.statusBars() or androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            }
+        }
+    }
     
     // 使用ProvideNavigator提供导航器给子组件
     ProvideNavigator(navigator) {
@@ -643,6 +669,9 @@ fun MainScreen(
                                 onNavigateToQuoteHistory = {
                                     navigator.navigateToQuoteHistory()
                                 },
+                                onNavigateToFlipClock = {
+                                    navigator.navigateToFlipClock()
+                                },
                                 pinnedSounds = pinnedSounds,
                                 favoriteSounds = favoriteSounds,
                                 locationPermissionLauncher = locationPermissionLauncher,
@@ -744,6 +773,12 @@ fun MainScreen(
                     }
                 )
             }
+            
+            composable("flipclock") {
+                FlipClockScreen(
+                    onBack = { navigator.popBackStack() }
+                )
+            }
         }
                 }
             }
@@ -753,15 +788,8 @@ fun MainScreen(
             androidx.compose.animation.AnimatedVisibility(
                 visible = isMainRoute && !isSettingsContentHidden,
                 modifier = Modifier.align(Alignment.BottomCenter),
-                enter = androidx.compose.animation.fadeIn(
-                    animationSpec = androidx.compose.animation.core.tween(
-                        durationMillis = 250,
-                        delayMillis = 50
-                    )
-                ),
-                exit = androidx.compose.animation.fadeOut(
-                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 200)
-                )
+                enter = androidx.compose.animation.fadeIn(animationSpec = tween(0)),
+                exit = androidx.compose.animation.fadeOut(animationSpec = tween(0))
             ) {
                 Surface(
                     modifier = Modifier
@@ -832,7 +860,7 @@ fun MainScreen(
                 }
             }
         }
-        
+
         // 全局浮动播放按钮（新版本 - 吸附式交互）
         org.xmsleep.app.ui.FloatingPlayButtonNew(
             audioManager = audioManager,
@@ -914,16 +942,13 @@ fun MainScreen(
         
         // 最近播放弹窗 - 只在应用启动时显示一次
         var showRecentPlayDialog by remember { mutableStateOf(false) }
-        var hasCheckedRecentPlay by remember { mutableStateOf(false) }
         
-        // 只在应用启动时检查一次是否显示弹窗
+        // 使用静态变量确保只在应用启动时检查一次
         LaunchedEffect(Unit) {
-            if (!hasCheckedRecentPlay) {
-                hasCheckedRecentPlay = true
+            if (!hasCheckedRecentPlayOnLaunch) {
+                hasCheckedRecentPlayOnLaunch = true
                 val audioManager = org.xmsleep.app.audio.AudioManager.getInstance()
-                // 检查是否有最近播放记录
                 if (audioManager.hasRecentSounds(context)) {
-                    // 延迟500ms显示，确保UI已完全加载
                     delay(500)
                     showRecentPlayDialog = true
                 }
@@ -1031,3 +1056,5 @@ private fun NavigationBarItem(
         }
     }
 }
+
+private var hasCheckedRecentPlayOnLaunch = false

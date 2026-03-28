@@ -51,6 +51,13 @@ interface XMSleepNavigator {
             popUpTo("main") { inclusive = true }
         }
     }
+    
+    /**
+     * 导航到翻页时钟页面
+     */
+    fun navigateToFlipClock() {
+        navController.navigate("flipclock")
+    }
 }
 
 /**

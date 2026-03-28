@@ -9,7 +9,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-blue.svg)](https://kotlinlang.org/)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://www.android.com/)
 
-[下载应用](#-下载) • [功能特性](#-功能特性) • [使用说明](#-使用说明)
+[下载应用](#下载) • [功能特性](#功能特性) • [使用说明](#使用说明)
 
 **Language**: 中文 | [English](README_EN.md)
 
@@ -23,24 +23,24 @@
 <table>
   <tr>
     <td align="center">
-      <img src="screenshots/1.jpg" alt="截图1" width="200"/>
+      <a href="screenshots/1.jpg"><img src="screenshots/1.jpg" alt="截图1" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/2.jpg" alt="截图2" width="200"/>
+      <a href="screenshots/2.jpg"><img src="screenshots/2.jpg" alt="截图2" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/3.jpg" alt="截图3" width="200"/>
+      <a href="screenshots/3.jpg"><img src="screenshots/3.jpg" alt="截图3" width="200"/></a>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="screenshots/4.jpg" alt="截图4" width="200"/>
+      <a href="screenshots/4.jpg"><img src="screenshots/4.jpg" alt="截图4" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/5.jpg" alt="截图5" width="200"/>
+      <a href="screenshots/5.jpg"><img src="screenshots/5.jpg" alt="截图5" width="200"/></a>
     </td>
     <td align="center">
-      <img src="screenshots/6.jpg" alt="截图6" width="200"/>
+      <a href="screenshots/6.jpg"><img src="screenshots/6.jpg" alt="截图6" width="200"/></a>
     </td>
   </tr>
 </table>

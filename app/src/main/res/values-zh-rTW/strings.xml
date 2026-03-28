@@ -13,7 +13,6 @@
     <string name="star_sky_more_sounds_hint">會有更多聲音出現在這裡</string>
     <string name="settings">設定</string>
     <string name="theme_and_colors">主題與色彩</string>
-    <string name="adjust_all_volume">一鍵調整音量</string>
     <string name="clear_cache">快取清理</string>
     <string name="software_update">軟體更新</string>
     <string name="about_xmsleep">關於 XMSLEEP</string>
@@ -25,12 +24,9 @@
     <string name="system">設定</string>
     <string name="other">其他</string>
     <string name="appearance_mode_theme_color">外觀模式、主題色</string>
-    <string name="unified_adjust_all_sound_volume">統一調整音量</string>
     <string name="clear_app_cache_data">清理應用快取資料</string>
     <string name="check_and_update_to_latest_version">檢查並更新到最新版本</string>
     <string name="view_app_info_version_copyright">查看應用資訊、版本和版權</string>
-    <string name="apply_to_all_playing_sounds">將應用到所有正在播放的聲音</string>
-    <string name="volume_set_to">音量已設定為%1$d%%</string>
     <string name="clearing">正在清理…</string>
     <string name="this_will_clear_all_cache_data">這將清理應用的所有快取資料，包括圖片、影片、暫存檔案等。</string>
     <string name="version">版本: %1$s (Build %2$d)</string>
