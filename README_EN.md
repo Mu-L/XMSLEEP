@@ -98,12 +98,24 @@ Built with Material Design 3 guidelines, the app features a clean and beautiful 
 
 ## 📦 Current Version
 
-- **Version**: 2.2.0
-- **Version Code**: 36
+- **Version**: 2.2.2
+- **Version Code**: 38
 - **Min SDK**: Android 8.0 (API 26)
 - **Target SDK**: Android 15 (API 35)
 
 ## 🆕 Latest Updates
+
+### v2.2.2
+#### 🎨 New Features
+- **Daily Quote Widget**: Added home screen widget displaying time, daily quote, and refresh button
+
+### v2.2.1
+#### 🎨 New Features
+- **Breathing Exercise**: Added guided breathing feature to help users relax
+
+#### ✨ Improvements
+- **Screen On**: Optimized screen-on settings
+- **Weather Audio Mapping**: Improved weather and audio mapping
 
 ### v2.2.0 (2025-02-03)
 
