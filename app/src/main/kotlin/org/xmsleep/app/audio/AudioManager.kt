@@ -68,7 +68,6 @@ class AudioManager private constructor() {
                 Sound.MORNING_COFFEE to R.raw.morning_coffee,
                 Sound.WINDMILL to R.raw.windmill,
             )
-        }
 
         @Volatile
         private var instance: AudioManager? = null
