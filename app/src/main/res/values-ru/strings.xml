@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">XMSLEEP</string>
     <string name="language">Язык</string>
-    <string name="language_description">Выберите язык отображения</string>
+    <string name="language_description">Язык отображения</string>
     <string name="language_simplified_chinese">简体中文</string>
     <string name="language_traditional_chinese">繁體中文</string>
     <string name="language_english">English</string>
@@ -22,20 +22,20 @@
     <string name="ok">ОК</string>
     <string name="cancel">Отмена</string>
     <string name="color_palette">Цветовая палитра</string>
-    <string name="confirm_clear_cache">Вы уверены, что хотите очистить все данные кэша?</string>
+    <string name="confirm_clear_cache">Очистить кэш приложения?</string>
     <string name="appearance">Функции</string>
     <string name="system">Система</string>
     <string name="other">Другое</string>
-    <string name="appearance_mode_theme_color">Режим, цвет темы</string>
+    <string name="appearance_mode_theme_color">Тема и цвета</string>
     <string name="feature_settings">Настройки функций</string>
-    <string name="feature_settings_description">Настройте параметры функций</string>
+    <string name="feature_settings_description">Настройки функций</string>
     <string name="feature_dialog_title">Функции</string>
 
-    <string name="clear_app_cache_data">Очистить данные кэша приложения</string>
-    <string name="check_and_update_to_latest_version">Проверить и обновить до последней версии</string>
-    <string name="view_app_info_version_copyright">Информация о приложении, версия и авторские права</string>
+    <string name="clear_app_cache_data">Очистить кэш</string>
+    <string name="check_and_update_to_latest_version">Проверить обновления</string>
+    <string name="view_app_info_version_copyright">О приложении</string>
     <string name="clearing">Очистка…</string>
-    <string name="this_will_clear_all_cache_data">Это приведёт к удалению всех кэшированных данных приложения, включая изображения, видео, временные файлы и т.д.</string>
+    <string name="this_will_clear_all_cache_data">Будут удалены все кэшированные данные: изображения, видео, временные файлы и т.д.</string>
     <string name="version">Версия: %1$s (Сборка %2$d)</string>
     <string name="app_description_title">Описание приложения</string>
     <string name="app_description">XMSLEEP — профессиональное приложение для воспроизведения белого шума и природных звуков, созданное для высококачественного аудио. Приложение содержит множество тщательно подобранных звуков природы, включая дождь, гром, костёр, пение птиц и другие, чтобы помочь вам расслабиться, улучшить концентрацию и качество сна.\n\nПриложение выполнено в соответствии со спецификациями Material Design 3 с чистым и красивым интерфейсом, а также плавным и интуитивным управлением. Поддерживает множество функций: переключение языков, настройка темы, независимая регулировка громкости, закреплённая область звуков, избранное и многое другое, позволяя вам наслаждаться индивидуальным звуковым опытом.</string>
@@ -64,7 +64,7 @@
     <string name="technical_info_title">Техническая информация</string>
     <string name="copyright">© XMSLEEP. Все права защищены.\n\nАудиоматериалы, предоставляемые этим приложением, предназначены только для личного обучения и развлечения.\nПожалуйста, уважайте авторские права соответствующих аудиоресурсов и не используйте их в коммерческих целях.</string>
     <string name="hide_animation">Скрыть WebP-анимацию</string>
-    <string name="hide_lottie_animation_in_sound_cards">Скрыть WebP-анимацию в карточках звуков</string>
+    <string name="hide_lottie_animation_in_sound_cards">Скрыть анимацию в карточках</string>
     <string name="background_settings">Настройки фона</string>
     <string name="background_animation">Анимация фона</string>
     <string name="select_background">Выбрать фон</string>
@@ -82,7 +82,7 @@
     <string name="white_noise_cards">Карточки белого шума</string>
     <string name="builtin_sounds_offline_hint">Встроенные звуки, не требуют подключения к сети</string>
     <string name="selected_count">Выбрано (%1$d)</string>
-    <string name="max_select_hint">В закреплённую область можно добавить не более 3 звуков</string>
+    <string name="max_select_hint">Максимум 3 звука</string>
     <string name="batch_select_default">Выбрать несколько по умолчанию</string>
     <string name="cancel_batch_select">Отменить выбор нескольких</string>
     <string name="default_playback_area">Закреплённая область</string>
@@ -91,7 +91,7 @@
     <string name="pause_preset">Поставить на паузу</string>
     <string name="preset">Пресет</string>
     <string name="done">Готово</string>
-    <string name="max_3_sounds_limit">В закреплённую область можно добавить не более 3 звуков</string>
+    <string name="max_3_sounds_limit">Максимум 3 звука</string>
     <string name="default_area_updated">Закреплённая область обновлена</string>
     <string name="selected">Выбрано</string>
     <string name="unselected">Не выбрано</string>
@@ -136,7 +136,7 @@
     <string name="use_pure_black_background_in_dark_mode">Использовать чёрный фон в тёмном режиме</string>
     <string name="lottie_animation">Lottie-анимация</string>
     <string name="cache_auto_cleared">Кэш превысил 200 МБ, автоматически очищен</string>
-    <string name="must_download_before_pin">Пожалуйста, загрузите аудио перед добавлением в закреплённую область</string>
+    <string name="must_download_before_pin">Сначала загрузите аудио</string>
     <string name="auto_clear_failed">Автоочистка не удалась: %1$s</string>
     <string name="downloaded">Загружено</string>
     <string name="cloud_audio">Облачное аудио</string>
@@ -173,11 +173,11 @@
     <string name="join_group_description">Подпишитесь на новости</string>
     <string name="community_dialog_title">Сообщество</string>
     <string name="open_github">GitHub</string>
-    <string name="open_github_description">Исходный код проекта</string>
+    <string name="open_github_description">Исходный код</string>
     <string name="join_telegram">Telegram</string>
     <string name="join_telegram_description">Поделитесь своими мыслями</string>
-    <string name="join_qq">Вступить в QQ группу</string>
-    <string name="join_qq_description">Присоединяйтесь к нашей QQ группе</string>
+    <string name="join_qq">QQ группа</string>
+    <string name="join_qq_description">Наша QQ группа</string>
     <string name="load_failed">Ошибка загрузки: %1$s</string>
     <string name="all_categories">Все</string>
     <string name="privacy_policy_title">Политика конфиденциальности</string>
@@ -194,7 +194,7 @@
     
     <!-- Auto Countdown -->
     <string name="auto_countdown">Автотаймер</string>
-    <string name="auto_countdown_description">Автоматически запускать таймер при воспроизведении пресета</string>
+    <string name="auto_countdown_description">Автотаймер при воспроизведении</string>
     <string name="select_countdown_time">Выберите время таймера</string>
     <string name="no_countdown">Без таймера</string>
     <string name="countdown_30_minutes">30 минут</string>
@@ -216,14 +216,14 @@
     <string name="drag_to_stop_play">Перетащите сюда, чтобы остановить воспроизведение</string>
     <string name="add_to_preset">Добавить в пресет</string>
     <string name="added_to_preset">Добавлено %1$d звуков в пресет %2$d</string>
-    <string name="preset_full">Пресет %1$d заполнен (макс. 10)</string>
+    <string name="preset_full">Пресет %1$d заполнен</string>
     <string name="no_playing_sounds">Нет воспроизводимых звуков</string>
     
     <!-- Preset Module -->
     <string name="preset_1">Пресет 1</string>
     <string name="preset_2">Пресет 2</string>
     <string name="preset_3">Пресет 3</string>
-    <string name="preset_max_reached">Текущий пресет достиг максимума — 10 звуков</string>
+    <string name="preset_max_reached">Максимум 10 звуков в пресете</string>
     
     <!-- Local Sound Names -->
     <string name="sound_umbrella_rain">Дождь по зонту</string>
@@ -268,7 +268,7 @@
     <string name="delete_success">Успешно удалено</string>
     <string name="delete_cancelled">Удаление отменено</string>
     <string name="confirm_delete">Подтверждение удаления</string>
-    <string name="confirm_delete_message">Вы уверены, что хотите удалить «%1$s»? Это действие нельзя отменить.</string>
+    <string name="confirm_delete_message">Удалить «%1$s»? Действие необратимо.</string>
     <string name="add_to_favorite">Добавить в избранное</string>
     <string name="remove_from_favorite">Удалить из избранного</string>
     <string name="added_to_favorite">Добавлено в избранное</string>
@@ -400,8 +400,8 @@
     </string-array>
     
     <!-- Weather Smart Recommend -->
-    <string name="weather_smart_recommend">Умные рекомендации по погоде</string>
-    <string name="weather_smart_recommend_desc">Автоматически рекомендовать белый шум на основе погоды</string>
+    <string name="weather_smart_recommend">По погоде</string>
+    <string name="weather_smart_recommend_desc">Рекомендовать звуки по погоде</string>
     <string name="weather_quote">Подарите себе мгновение тишины</string>
     <string name="weather_sound_mapping">Сопоставление звуков с погодой</string>
     <string name="save">Сохранить</string>
@@ -520,7 +520,7 @@
 
     <!-- Flip Clock -->
     <string name="flip_clock">Большие часы</string>
-    <string name="flip_clock_description">Эта функция требует достаточного заряда батареи</string>
+    <string name="flip_clock_description">Требуется заряд батареи</string>
     <string name="flip_clock_back">Назад</string>
     <string name="flip_clock_countdown">Таймер</string>
     <string name="flip_clock_cancel_countdown">Отменить таймер</string>
@@ -547,10 +547,10 @@
 
     <!-- Recent play dialog settings -->
     <string name="show_recent_play_dialog">Недавнее</string>
-    <string name="show_recent_play_dialog_description">Показывать окно недавнего при запуске</string>
+    <string name="show_recent_play_dialog_description">Показывать при запуске</string>
     <string name="auto_play_on_start">Автовоспроизведение при запуске</string>
-    <string name="auto_play_on_start_description">Автоматически воспроизводить последний использованный пресет при запуске приложения</string>
-    <string name="auto_play_need_preset_tip">Пожалуйста, сначала добавьте аудио в пресет</string>
+    <string name="auto_play_on_start_description">Автовоспроизведение пресета при запуске</string>
+    <string name="auto_play_need_preset_tip">Сначала добавьте аудио в пресет</string>
     <string name="tip">Подсказка</string>
 
     <!-- MediaSession aggregate subtitle -->
