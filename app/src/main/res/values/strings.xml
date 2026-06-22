@@ -564,6 +564,7 @@
     <string name="show_radio_tab_description">在底部导航栏显示电台标签</string>
     <string name="show_breathing_tab">呼吸 Tab</string>
     <string name="show_breathing_tab_description">在底部导航栏显示呼吸标签</string>
+    <string name="bilibili_room_list_hint">以下列表为哔哩哔哩的实时播放房间内容</string>
     
     <!-- 番茄计时器 -->
     <string name="tomato_timer_title">番茄时钟</string>

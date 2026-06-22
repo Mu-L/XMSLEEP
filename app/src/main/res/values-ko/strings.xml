@@ -626,6 +626,7 @@
     <string name="show_radio_tab_description">하단 탐색 표시줄에 라디오 탭 표시</string>
     <string name="show_breathing_tab">호흡 탭</string>
     <string name="show_breathing_tab_description">하단 탐색 표시줄에 호흡 탭 표시</string>
+    <string name="bilibili_room_list_hint">다음 목록은 빌리빌리의 실시간 방송방 내용입니다</string>
     <string name="search_result">%s 검색 결과</string>
     
     

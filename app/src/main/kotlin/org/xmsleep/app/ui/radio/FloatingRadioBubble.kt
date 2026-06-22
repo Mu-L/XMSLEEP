@@ -69,7 +69,12 @@ fun FloatingRadioBubble(
 
     var isExpanded by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
-    var offsetX by remember { mutableFloatStateOf(0f) }
+    var isOnLeft by remember {
+        mutableStateOf(PreferencesManager.getRadioFloatingButtonIsLeft(context))
+    }
+    var offsetX by remember {
+        mutableFloatStateOf(if (isOnLeft) 0f else with(density) { screenWidth.toPx() })
+    }
     var offsetY by remember {
         val savedY = PreferencesManager.getRadioFloatingButtonY(context)
         mutableFloatStateOf(
@@ -79,13 +84,6 @@ fun FloatingRadioBubble(
                 savedY
             }
         )
-    }
-    var isOnLeft by remember {
-        mutableStateOf(PreferencesManager.getRadioFloatingButtonIsLeft(context))
-    }
-
-    LaunchedEffect(Unit) {
-        offsetX = if (isOnLeft) 0f else with(density) { screenWidth.toPx() }
     }
 
     val width by animateDpAsState(

@@ -633,6 +633,7 @@
     <string name="show_radio_tab_description">Показывать вкладку радио в нижней панели навигации</string>
     <string name="show_breathing_tab">Вкладка дыхания</string>
     <string name="show_breathing_tab_description">Показывать вкладку дыхания в нижней панели навигации</string>
+    <string name="bilibili_room_list_hint">Ниже представлены комнаты прямых эфиров Bilibili в реальном времени</string>
     <string name="search_result">Результаты поиска «%s»</string>
     
     

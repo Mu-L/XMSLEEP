@@ -522,6 +522,7 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="show_radio_tab_description">Show radio tab in the bottom navigation bar</string>
     <string name="show_breathing_tab">Breathing Tab</string>
     <string name="show_breathing_tab_description">Show breathing tab in the bottom navigation bar</string>
+    <string name="bilibili_room_list_hint">The following list shows real-time streaming rooms from Bilibili</string>
     <string name="search_result">Search results for "%s"</string>
     
     <!-- Tomato Timer -->

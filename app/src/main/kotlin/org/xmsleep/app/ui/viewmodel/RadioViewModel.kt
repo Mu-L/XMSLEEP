@@ -183,7 +183,8 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
             val results = BilibiliApi.searchRooms(keyword)
                 .filter { room ->
                     room.area !in excludeAreas &&
-                    excludeTitleKeywords.none { room.title.contains(it) }
+                    excludeTitleKeywords.none { room.title.contains(it) } &&
+                    (room.title.contains(keyword))
                 }
                 .sortedByDescending { it.online }
             if (_searchKeyword.value == keyword) {
@@ -250,7 +251,8 @@ class RadioViewModel(application: Application) : AndroidViewModel(application) {
             val results = BilibiliApi.searchRooms(keyword)
                 .filter { room ->
                     room.area !in excludeAreas &&
-                    excludeTitleKeywords.none { room.title.contains(it) }
+                    excludeTitleKeywords.none { room.title.contains(it) } &&
+                    (room.title.contains(keyword))
                 }
                 .sortedByDescending { it.online }
             _bilibiliRooms.value = results

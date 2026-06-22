@@ -633,6 +633,7 @@
     <string name="show_radio_tab_description">下部ナビゲーションバーにラジオタブを表示</string>
     <string name="show_breathing_tab">呼吸タブ</string>
     <string name="show_breathing_tab_description">下部ナビゲーションバーに呼吸タブを表示</string>
+    <string name="bilibili_room_list_hint">以下はBilibiliのリアルタイム配信ルーム一覧です</string>
     <string name="search_result">「%s」の検索結果</string>
     
     

@@ -614,6 +614,7 @@
     <string name="show_radio_tab_description">在底部導航欄顯示電台標籤</string>
     <string name="show_breathing_tab">呼吸 Tab</string>
     <string name="show_breathing_tab_description">在底部導航欄顯示呼吸標籤</string>
+    <string name="bilibili_room_list_hint">以下列表為嗶哩嗶哩的即時播放房間內容</string>
     <string name="search_result">%s 的搜尋結果</string>
     
     

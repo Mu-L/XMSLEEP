@@ -385,7 +385,7 @@ fun RadioScreen(
         )
 
         FloatingRadioBubble(
-            visible = playingRoomId != null && isPlaying,
+            visible = playingRoomId != null,
             room = playingRoomInfo,
             roomId = playingRoomId,
             isPlaying = isPlaying,
@@ -541,6 +541,13 @@ fun RadioScreen(
                         }
                     }
                 }
+                
+                Text(
+                    text = stringResource(R.string.bilibili_room_list_hint),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
 
                 val pinnedRooms = pinnedRoomInfos
                 val otherRooms = bilibiliRooms.filter { it.roomId !in pinnedRoomIds }
