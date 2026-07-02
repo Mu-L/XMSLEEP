@@ -93,6 +93,7 @@ fun MainScreen(
     mainViewModel: MainViewModel = hiltViewModel(),
     soundsViewModel: SoundsViewModel = hiltViewModel(),
     customBackgroundUri: String? = null,
+    customBackgroundColor: Color? = null,
     onPickCustomBackground: () -> Unit = {},
     pendingCustomBgUri: String? = null,
     pendingCustomBgColor: Color? = null,
@@ -435,6 +436,7 @@ fun MainScreen(
                 org.xmsleep.app.ui.components.AnimatedBackground(
                     backgroundSelection = backgroundSelection,
                     customBackgroundUri = customBackgroundUri,
+                    customBackgroundColor = customBackgroundColor,
                     modifier = Modifier.fillMaxSize()
                 )
             }

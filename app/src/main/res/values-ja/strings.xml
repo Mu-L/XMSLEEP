@@ -650,4 +650,7 @@
     
     
 
+    <string name="storage_management">ストレージ管理</string>
+    <string name="clear_downloaded">ダウンロードをクリア</string>
+    <string name="storage_space">使用容量: %s</string>
 </resources>

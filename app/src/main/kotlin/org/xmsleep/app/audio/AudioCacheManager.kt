@@ -41,12 +41,22 @@ class AudioCacheManager private constructor(context: Context) {
     }
     
     private val appContext: Context = context.applicationContext
-    private val cacheDir: File = File(appContext.cacheDir, CACHE_DIR_NAME)
+    private val cacheDir: File = File(appContext.filesDir, CACHE_DIR_NAME)
     private val okHttpClient = NetworkClient.newBuilder()
         .readTimeout(90, TimeUnit.SECONDS)    // 音频文件较大，使用更长的读取超时
         .build()
     
     init {
+        // 从旧缓存目录迁移（app 升级后首次运行）
+        val oldCache = File(appContext.cacheDir, CACHE_DIR_NAME)
+        if (oldCache.exists()) {
+            if (!cacheDir.exists()) cacheDir.mkdirs()
+            oldCache.listFiles()?.forEach { file ->
+                val dest = File(cacheDir, file.name)
+                if (!dest.exists()) file.renameTo(dest)
+            }
+            oldCache.delete()
+        }
         // 确保缓存目录存在
         if (!cacheDir.exists()) {
             cacheDir.mkdirs()

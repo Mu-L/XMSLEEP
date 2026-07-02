@@ -18,7 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -192,6 +192,9 @@ fun StarSkyScreen(
     var showDailyQuoteDialog by remember { mutableStateOf(false) }
     var dailyQuote by remember { mutableStateOf<org.xmsleep.app.quote.Quote?>(null) }
     var isLoadingQuote by remember { mutableStateOf(false) }
+    
+    // 存储管理弹窗
+    var showStorageDialog by remember { mutableStateOf(false) }
     
     // 下拉刷新状态
     var isRefreshing by remember { mutableStateOf(false) }
@@ -463,20 +466,13 @@ fun StarSkyScreen(
                     )
                 }
                 
-                // 布局切换按钮
+                // 存储管理图标
                 IconButton(
-                    onClick = { 
-                        val newColumnsCount = if (columnsCount == 2) 3 else 2
-                        columnsCount = newColumnsCount
-                        org.xmsleep.app.preferences.PreferencesManager.saveStarSkyColumnsCount(context, newColumnsCount)
-                    }
+                    onClick = { showStorageDialog = true }
                 ) {
                     Icon(
-                        imageVector = if (columnsCount == 2) Icons.Default.GridView else Icons.Outlined.ViewAgenda,
-                        contentDescription = if (columnsCount == 2) 
-                            context.getString(R.string.switch_to_3_columns) 
-                        else 
-                            context.getString(R.string.switch_to_2_columns),
+                        imageVector = Icons.Outlined.Inventory2,
+                        contentDescription = "存储管理",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -1164,6 +1160,16 @@ fun StarSkyScreen(
                     }
                 },
                 isLoading = isLoadingQuote
+            )
+        }
+        
+        // 存储管理对话框
+        if (showStorageDialog) {
+            StorageManagementDialog(
+                remoteSounds = remoteSounds,
+                remoteCategories = remoteCategories,
+                cacheManager = cacheManager,
+                onDismiss = { showStorageDialog = false }
             )
         }
         

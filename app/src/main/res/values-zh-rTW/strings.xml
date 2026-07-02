@@ -631,4 +631,7 @@
     
     
 
+    <string name="storage_management">儲存管理</string>
+    <string name="clear_downloaded">清除已下載</string>
+    <string name="storage_space">佔用空間: %s</string>
 </resources>

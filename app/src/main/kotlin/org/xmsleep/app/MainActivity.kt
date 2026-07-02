@@ -441,6 +441,7 @@ fun XMSLEEPApp() {
                     mainViewModel = mainViewModel,
                     soundsViewModel = soundsViewModel,
                     customBackgroundUri = customBackgroundUri,
+                    customBackgroundColor = customBackgroundColor,
                     pendingCustomBgUri = pendingCustomBgUri,
                     pendingCustomBgColor = pendingCustomBgColor,
                     onPickCustomBackground = { customBackgroundLauncher.launch(arrayOf("image/*", "video/mp4")) },
