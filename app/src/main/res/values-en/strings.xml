@@ -500,11 +500,12 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="weather_location_required">Location permission required</string>
     
     <!-- Breathing Exercise -->
-    <string name="breathing_exercise">Breathe</string>
+    <string name="breathing_exercise">Breathing</string>
     <string name="tap_to_start">Tap to Start</string>
     <string name="inhale">Inhale...</string>
     <string name="hold">Hold...</string>
     <string name="exhale">Exhale...</string>
+    <string name="hold_after">Hold...</string>
     <string name="breath_count">Breath %1$d</string>
     
     <!-- Breathing Guide -->
@@ -515,6 +516,60 @@ If you have any questions, please contact us through the in-app contact method.<
     <string name="breathing_guide_step4">4. Exhale (4s): Follow the shrinking circle</string>
     <string name="breathing_guide_step5">5. Duration: 5 minutes, stops automatically</string>
     <string name="got_it">Got it</string>
+    <string name="operation_steps">Steps</string>
+    <string name="breathing_rhythm">Breathing Rhythm</string>
+    <string name="breathing_rhythm_detail">Inhale %1$d sec → Hold %2$d sec → Exhale %3$d sec → Hold %4$d sec</string>
+    <string name="preset_duration">Preset Duration</string>
+    <string name="select_duration">Select Duration</string>
+    <string name="custom_duration">Custom Duration</string>
+    
+    <!-- Breathing Method Names -->
+    <string name="breathing_method_478_name">4-7-8 Sleep Breathing</string>
+    <string name="breathing_method_478_subtitle">Recommended • For Insomnia</string>
+    <string name="breathing_method_478_desc">Developed by Dr. Andrew Weil at Harvard Medical School, known as "nature\'s sleeping pill." Extended exhale forcefully lowers heart rate and reduces brain cortex activity, quickly relieving pre-sleep racing thoughts, difficulty falling asleep, and nighttime awakenings. 2 weeks of practice can significantly shorten sleep onset time.</string>
+    <string name="breathing_method_478_step1">Lie down relaxed, tongue tip lightly touching the roof of your mouth, exhale completely through your mouth</string>
+    <string name="breathing_method_478_step2">Close mouth, gently inhale through nose for 4 seconds, abdomen naturally expands</string>
+    <string name="breathing_method_478_step3">Hold breath for 7 seconds, keep body relaxed without tension</string>
+    <string name="breathing_method_478_step4">Lips slightly open, slowly exhale for 8 seconds, you may make a soft \'shh\' sound</string>
+    <string name="breathing_method_478_step5">Repeat 4-8 cycles, gently bring attention back if mind wanders</string>
+    <string name="breathing_method_478_tag1">Sleep Aid</string>
+    <string name="breathing_method_478_tag2">Deep Sleep</string>
+    <string name="breathing_method_478_tag3">Night Relax</string>
+    
+    <string name="breathing_method_box_name">Box Breathing</string>
+    <string name="breathing_method_box_subtitle">Square Breathing • Balance Focus</string>
+    <string name="breathing_method_box_desc">US Navy SEAL stress relief training method, named for its square-like equal breathing rhythm. Balances sympathetic and parasympathetic nervous systems, relieves panic, irritability, and workplace stress. Promotes relaxation without drowsiness, ideal for lunch breaks, work intervals, and pre-exam calm.</string>
+    <string name="breathing_method_box_step1">Sit upright or lie down with straight back, relax entire body</string>
+    <string name="breathing_method_box_step2">Inhale steadily through nose for 4 seconds, abdomen expands</string>
+    <string name="breathing_method_box_step3">Hold breath for 4 seconds, maintain inner calm</string>
+    <string name="breathing_method_box_step4">Exhale slowly through nose for 4 seconds, empty lungs completely</string>
+    <string name="breathing_method_box_step5">Brief pause after exhale for 4 seconds, complete one full cycle</string>
+    <string name="breathing_method_box_tag1">Daytime Relief</string>
+    <string name="breathing_method_box_tag2">Focus</string>
+    <string name="breathing_method_box_tag3">Emotion Balance</string>
+    
+    <string name="breathing_method_belly_name">Basic Belly Breathing</string>
+    <string name="breathing_method_belly_subtitle">Universal • Beginner Friendly</string>
+    <string name="breathing_method_belly_desc">No fixed timing rhythm, the foundation of all breathing techniques, zero threshold. Uses diaphragmatic breathing instead of chest breathing. Improves shallow, rapid breathing habits, relieves chronic chest tightness, anxiety, and fatigue. Practice anytime, anywhere - perfect for beginners and those with mild anxiety.</string>
+    <string name="breathing_method_belly_step1">One hand on chest, one hand on abdomen</string>
+    <string name="breathing_method_belly_step2">Inhale slowly through nose, only abdomen rises, chest stays still</string>
+    <string name="breathing_method_belly_step3">Exhale steadily through mouth, abdomen draws inward and downward</string>
+    <string name="breathing_method_belly_step4">Keep slow and smooth throughout, exhale should be 1.5-2x longer than inhale, cycle freely</string>
+    <string name="breathing_method_belly_tag1">Beginner</string>
+    <string name="breathing_method_belly_tag2">Daily Calm</string>
+    <string name="breathing_method_belly_tag3">Foundation</string>
+    
+    <string name="breathing_method_426_name">4-2-6 Quick Stress Relief</string>
+    <string name="breathing_method_426_subtitle">Quick Calm • Tense Moments</string>
+    <string name="breathing_method_426_desc">Lightweight short rhythm, perfect for sudden panic, emotional breakdown, or pre-sleep irritability. Extremely low barrier to entry. Rapidly reduces stress hormone cortisol, calms racing heartbeat and nervous trembling within 1 minute. Ideal for commutes, before meetings, or quick buffer during emotional overload.</string>
+    <string name="breathing_method_426_step1">Close eyes, relax shoulders, inhale through nose for 4 seconds</string>
+    <string name="breathing_method_426_step2">Briefly hold for 2 seconds, don\'t force breath holding</string>
+    <string name="breathing_method_426_step3">Extend exhale to 6 seconds, breathing out all tension and stress</string>
+    <string name="breathing_method_426_tag1">Quick Relief</string>
+    <string name="breathing_method_426_tag2">Instant Calm</string>
+    <string name="breathing_method_426_tag3">Short Relax</string>
+    
+    <string name="breathing_method_primary">Recommended</string>
     
     <!-- Bottom Navigation Tabs -->
     <string name="tab_white_noise">XM</string>

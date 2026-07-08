@@ -40,7 +40,8 @@ import org.xmsleep.app.theme.DarkModeOption
 import org.xmsleep.app.ui.settings.SettingsScreen
 import org.xmsleep.app.ui.settings.ThemeSettingsScreen
 import org.xmsleep.app.ui.starsky.StarSkyScreen
-import org.xmsleep.app.ui.breathing.BreathingScreen
+import org.xmsleep.app.ui.breathing.BreathingListScreen
+import org.xmsleep.app.ui.breathing.BreathingDetailScreen
 import org.xmsleep.app.ui.flipclock.FlipClockScreen
 import org.xmsleep.app.ui.tomato.TomatoTimerScreen
 import org.xmsleep.app.utils.Logger
@@ -410,7 +411,7 @@ fun MainScreen(
     // 监听当前路由，判断是否在二级页面
     val currentBackStackEntry by navigator.navController.currentBackStackEntryAsState()
     val currentRoute = currentBackStackEntry?.destination?.route
-    val isInSecondaryPage = currentRoute in listOf("theme", "local_audio", "quoteHistory", "flipclock", "tomato_timer", "diary")
+    val isInSecondaryPage = currentRoute in listOf("theme", "local_audio", "quoteHistory", "flipclock", "tomato_timer", "diary", "breathing_detail/{methodId}")
     val isMainRoute = !isInSecondaryPage  // 主页面 = 不在二级页面
     val isFlipClockPage = currentRoute == "flipclock"
     
@@ -618,12 +619,14 @@ fun MainScreen(
                             )
                         }
                         4 -> {
-                            // 呼吸页面
-                            BreathingScreen(
+                            // 呼吸列表页面
+                            BreathingListScreen(
+                                onMethodClick = { methodId ->
+                                    navigator.navigateToBreathingDetail(methodId)
+                                },
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(paddingValues),
-                                activity = mainActivity
+                                    .padding(paddingValues)
                             )
                         }
                         3 -> {
@@ -745,6 +748,15 @@ fun MainScreen(
                     onScrollDetected = {
                         shouldCollapseFloatingButton = true
                     }
+                )
+            }
+            
+            composable("breathing_detail/{methodId}") { backStackEntry ->
+                val methodId = backStackEntry.arguments?.getString("methodId") ?: "sleep_478"
+                BreathingDetailScreen(
+                    methodId = methodId,
+                    activity = mainActivity,
+                    onBack = { navigator.popBackStack() }
                 )
             }
         }

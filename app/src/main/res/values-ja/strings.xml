@@ -515,6 +515,66 @@
     <string name="breathing_guide_step4">4. 吐く（4秒）：円が縮小するのに合わせて</string>
     <string name="breathing_guide_step5">5. 時間：5分間、自動的に停止</string>
     <string name="got_it">わかりました</string>
+    <string name="hold_after">止める…</string>
+    
+    <!-- 呼吸法詳細 -->
+    <string name="operation_steps">操作手順</string>
+    <string name="breathing_rhythm">呼吸リズム</string>
+    <string name="breathing_rhythm_detail">吸う %1$d 秒 → 止める %2$d 秒 → 吐く %3$d 秒 → 止める %4$d 秒</string>
+    <string name="preset_duration">標準時間</string>
+    <string name="select_duration">時間を選択</string>
+    <string name="custom_duration">カスタム時間</string>
+    
+    <!-- 呼吸法: 4-7-8 -->
+    <string name="breathing_method_478_name">4-7-8 睡眠呼吸法</string>
+    <string name="breathing_method_478_subtitle">おすすめ・不眠に</string>
+    <string name="breathing_method_478_desc">ハーバード医科大学のアンドリュー・ワイル博士が開発した「天然の睡眠薬」。長い呼気で心拍数を強制的に下げ、大脳皮質の活性を抑え、寝る前の考えすぎや入眠困難、夜中に目覚める症状を素早く緩和。2週間の継続で入眠時間が大幅に短縮されます。</string>
+    <string name="breathing_method_478_step1">仰向けにリラックスし、舌先を上あごに軽く当て、口から完全に息を吐き出す</string>
+    <string name="breathing_method_478_step2">口を閉じ、鼻から4秒かけて優しく吸い、腹部を自然に膨らませる</string>
+    <string name="breathing_method_478_step3">7秒間息を止め、全身の力を抜く</string>
+    <string name="breathing_method_478_step4">唇を軽く開け、8秒かけてゆっくり吐き出す、\'スー\'という音を立ててもよい</string>
+    <string name="breathing_method_478_step5">4～8サイクル繰り返す、雑念が浮かんでも優しく呼吸に意識を戻す</string>
+    <string name="breathing_method_478_tag1">睡眠補助</string>
+    <string name="breathing_method_478_tag2">深い睡眠</string>
+    <string name="breathing_method_478_tag3">夜のリラックス</string>
+    
+    <!-- 呼吸法: Box -->
+    <string name="breathing_method_box_name">ボックス呼吸</string>
+    <string name="breathing_method_box_subtitle">スクエア呼吸・集中力</string>
+    <string name="breathing_method_box_desc">米海軍特殊部隊のストレス対策訓練法。正方形を描くように均等な呼吸リズムから名付けられた。交感神経と副交感神経のバランスを整え、動悸、イライラ、仕事のストレスを緩和。リラックスしながらも眠くならないので、昼休みや仕事の合間、試験前の気持ちの安定に最適。</string>
+    <string name="breathing_method_box_step1">背筋を伸ばして座るか仰向けに寝て、全身をリラックスさせる</string>
+    <string name="breathing_method_box_step2">鼻から4秒かけて一定の速度で吸い、腹部を膨らませる</string>
+    <string name="breathing_method_box_step3">4秒間息を止め、心を落ち着かせる</string>
+    <string name="breathing_method_box_step4">鼻から4秒かけてゆっくり吐き、肺の空気を完全に出す</string>
+    <string name="breathing_method_box_step5">吐き終えたら4秒間休止し、1サイクル完了</string>
+    <string name="breathing_method_box_tag1">日中のストレス解消</string>
+    <string name="breathing_method_box_tag2">集中力</string>
+    <string name="breathing_method_box_tag3">感情の安定</string>
+    
+    <!-- 呼吸法: 腹式 -->
+    <string name="breathing_method_belly_name">基本腹式呼吸</string>
+    <string name="breathing_method_belly_subtitle">ユニバーサル・初心者向け</string>
+    <string name="breathing_method_belly_desc">固定のリズムがなく、すべての呼吸法の基礎。ゼロから始められる。胸呼吸ではなく横隔膜呼吸を使う。浅く速い呼吸習慣を改善し、慢性的な胸の詰まり、不安、疲労を緩和。いつでもどこでも練習可能で、呼吸初心者や軽度の不安を持つ人に最適。</string>
+    <string name="breathing_method_belly_step1">片手を胸に、もう一方を腹部に置く</string>
+    <string name="breathing_method_belly_step2">鼻からゆっくり吸い、腹部だけが膨らみ、胸は動かさない</string>
+    <string name="breathing_method_belly_step3">口から一定の速度で吐き、腹部を内側に引き締める</string>
+    <string name="breathing_method_belly_step4">全体を通してゆっくりと滑らかに、呼気は吸気の1.5～2倍の長さを目安に自由に循環</string>
+    <string name="breathing_method_belly_tag1">初心者</string>
+    <string name="breathing_method_belly_tag2">日常の安らぎ</string>
+    <string name="breathing_method_belly_tag3">基礎</string>
+    
+    <!-- 呼吸法: 4-2-6 -->
+    <string name="breathing_method_426_name">4-2-6 クイックストレス解消</string>
+    <string name="breathing_method_426_subtitle">クイックカーム・緊張時に</string>
+    <string name="breathing_method_426_desc">軽量な短いリズム。突然のパニック、感情の崩壊、寝る前のイライラに最適。非常に低いハードル。ストレスホルモンのコルチゾールを急速に低下させ、1分以内に心拍数の上昇や緊張による震えを鎮める。通勤中、会議前、感情が高ぶった時のクイックバッファーに。</string>
+    <string name="breathing_method_426_step1">目を閉じて肩の力を抜き、鼻から4秒かけて吸う</string>
+    <string name="breathing_method_426_step2">2秒間軽く止める、無理に息を止めない</string>
+    <string name="breathing_method_426_step3">呼気を6秒に延ばし、緊張とストレスをすべて吐き出す</string>
+    <string name="breathing_method_426_tag1">クイック解消</string>
+    <string name="breathing_method_426_tag2">インスタントカーム</string>
+    <string name="breathing_method_426_tag3">ショートリラックス</string>
+    
+    <string name="breathing_method_primary">おすすめ</string>
     
     <!-- Bottom Navigation Tabs -->
     <string name="tab_white_noise">XM</string>

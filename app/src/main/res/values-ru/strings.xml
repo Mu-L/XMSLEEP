@@ -515,6 +515,66 @@
     <string name="breathing_guide_step4">4. Выдох (4 с): следуйте за сжимающимся кругом</string>
     <string name="breathing_guide_step5">5. Длительность: 5 минут, автоматическая остановка</string>
     <string name="got_it">Понятно</string>
+    <string name="hold_after">Задержка...</string>
+    
+    <!-- Детали дыхания -->
+    <string name="operation_steps">Шаги выполнения</string>
+    <string name="breathing_rhythm">Ритм дыхания</string>
+    <string name="breathing_rhythm_detail">Вдох %1$d с → Задержка %2$d с → Выдох %3$d с → Задержка %4$d с</string>
+    <string name="preset_duration">Длительность</string>
+    <string name="select_duration">Выбрать время</string>
+    <string name="custom_duration">Своё время</string>
+    
+    <!-- Метод: 4-7-8 -->
+    <string name="breathing_method_478_name">4-7-8 Дыхание для сна</string>
+    <string name="breathing_method_478_subtitle">Рекомендуется • От бессонницы</string>
+    <string name="breathing_method_478_desc">Разработано доктором Эндрю Вейлом из Гарвардской медицинской школы, известно как «натуральное снотворное». Удлинённый выдох принудительно снижает частоту сердечных сокращений и активность коры головного мозга, быстро облегчая тревожные мысли перед сном, трудности с засыпанием и ночные пробуждения. 2 недели практики значительно сокращают время засыпания.</string>
+    <string name="breathing_method_478_step1">Лягте расслабленно, кончик языка слегка касается нёба, полностью выдохните через рот</string>
+    <string name="breathing_method_478_step2">Закройте рот, мягко вдохните через нос на 4 секунды, живот естественно расширяется</string>
+    <string name="breathing_method_478_step3">Задержите дыхание на 7 секунд, тело остаётся расслабленным</string>
+    <string name="breathing_method_478_step4">Слегка приоткройте губы, медленно выдыхайте 8 секунд, можно издавать мягкий звук \'ш-ш-ш\'</string>
+    <string name="breathing_method_478_step5">Повторите 4–8 циклов, если мысли отвлекаются — мягко верните внимание к дыханию</string>
+    <string name="breathing_method_478_tag1">Помощь ко сну</string>
+    <string name="breathing_method_478_tag2">Глубокий сон</string>
+    <string name="breathing_method_478_tag3">Ночное расслабление</string>
+    
+    <!-- Метод: Box -->
+    <string name="breathing_method_box_name">Квадратное дыхание</string>
+    <string name="breathing_method_box_subtitle">Квадратное дыхание • Фокус</string>
+    <string name="breathing_method_box_desc">Метод снятия стресса морских котиков США, названный в честь равномерного дыхательного ритма, напоминающего квадрат. Балансирует симпатическую и парасимпатическую нервные системы, снимает панику, раздражительность и рабочий стресс. Расслабляет, не вызывая сонливости, идеально для обеденных перерывов, рабочих пауз и успокоения перед экзаменом.</string>
+    <string name="breathing_method_box_step1">Сядьте прямо или лягте на спину, расслабьте всё тело</string>
+    <string name="breathing_method_box_step2">Равномерно вдохните через нос на 4 секунды, живот расширяется</string>
+    <string name="breathing_method_box_step3">Задержите дыхание на 4 секунды, сохраняйте внутреннее спокойствие</string>
+    <string name="breathing_method_box_step4">Медленно выдохните через нос на 4 секунды, полностью опорожняя лёгкие</string>
+    <string name="breathing_method_box_step5">Короткая пауза после выдоха на 4 секунды — завершён полный цикл</string>
+    <string name="breathing_method_box_tag1">Дневное снятие стресса</string>
+    <string name="breathing_method_box_tag2">Фокус</string>
+    <string name="breathing_method_box_tag3">Эмоциональный баланс</string>
+    
+    <!-- Метод: Диафрагмальное -->
+    <string name="breathing_method_belly_name">Базовое диафрагмальное дыхание</string>
+    <string name="breathing_method_belly_subtitle">Универсально • Для начинающих</string>
+    <string name="breathing_method_belly_desc">Без фиксированного ритма — основа всех дыхательных техник, нулевой порог входа. Использует диафрагмальное дыхание вместо грудного. Улучшает поверхностное и учащённое дыхание, снимает хроническую заложенность в груди, тревожность и усталость. Практикуйте в любое время — идеально для новичков и людей с лёгкой тревожностью.</string>
+    <string name="breathing_method_belly_step1">Положите одну руку на грудь, другую на живот</string>
+    <string name="breathing_method_belly_step2">Медленно вдохните носом — только живот поднимается, грудь остаётся неподвижной</string>
+    <string name="breathing_method_belly_step3">Равномерно выдохните ртом — живот втягивается внутрь и опускается</string>
+    <string name="breathing_method_belly_step4">Всё выполняйте медленно и плавно, выдох должен быть в 1,5–2 раза длиннее вдоха, свободный цикл</string>
+    <string name="breathing_method_belly_tag1">Новичок</string>
+    <string name="breathing_method_belly_tag2">Ежедневное спокойствие</string>
+    <string name="breathing_method_belly_tag3">Основа</string>
+    
+    <!-- Метод: 4-2-6 -->
+    <string name="breathing_method_426_name">4-2-6 Быстрое снятие стресса</string>
+    <string name="breathing_method_426_subtitle">Быстрое успокоение • Напряжённые моменты</string>
+    <string name="breathing_method_426_desc">Лёгкий короткий ритм. Подходит для внезапной паники, эмоционального срыва или раздражительности перед сном. Очень низкий порог входа. Быстро снижает уровень кортизола, в течение 1 минуты успокаивает учащённое сердцебиение и нервную дрожь. Идеально для дороги, перед встречами или для быстрой разрядки при эмоциональной перегрузке.</string>
+    <string name="breathing_method_426_step1">Закройте глаза, расслабьте плечи, вдохните через нос на 4 секунды</string>
+    <string name="breathing_method_426_step2">Короткая задержка на 2 секунды, не форсируйте</string>
+    <string name="breathing_method_426_step3">Удлините выдох до 6 секунд, выдыхая всё напряжение и стресс</string>
+    <string name="breathing_method_426_tag1">Быстрое облегчение</string>
+    <string name="breathing_method_426_tag2">Мгновенное спокойствие</string>
+    <string name="breathing_method_426_tag3">Короткое расслабление</string>
+    
+    <string name="breathing_method_primary">Рекомендуется</string>
     
     <!-- Bottom Navigation Tabs -->
     <string name="tab_white_noise">XM</string>

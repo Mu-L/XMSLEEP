@@ -64,6 +64,13 @@ interface XMSleepNavigator {
     fun navigateToTomatoTimer() {
         navController.navigate("tomato_timer")
     }
+    
+    /**
+     * 导航到呼吸详情页面
+     */
+    fun navigateToBreathingDetail(methodId: String) {
+        navController.navigate("breathing_detail/$methodId")
+    }
 }
 
 /**
