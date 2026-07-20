@@ -3,6 +3,8 @@ package org.xmsleep.app.ui.flipclock
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import androidx.compose.animation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,11 +21,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.xmsleep.app.R
 import org.xmsleep.app.preferences.PreferencesManager
@@ -49,6 +53,22 @@ fun FlipClockScreen(
     var showControls by remember { mutableStateOf(false) }
     var showCountdownDialog by remember { mutableStateOf(false) }
     var showFontSelector by remember { mutableStateOf(false) }
+    // 交互计时令牌：每次用户交互 +1，用于重置"4秒无操作自动收起操作栏"的计时
+    var controlsTimerToken by remember { mutableIntStateOf(0) }
+
+    // 4秒无操作自动收起操作栏（弹窗打开时暂停计时）
+    LaunchedEffect(showControls, controlsTimerToken, showCountdownDialog, showFontSelector) {
+        if (showControls && !showCountdownDialog && !showFontSelector) {
+            delay(4000)
+            showControls = false
+        }
+    }
+
+    val clockScale by animateFloatAsState(
+        targetValue = if (showControls) 0.9f else 1f,
+        animationSpec = tween(durationMillis = 300),
+        label = "clockScale"
+    )
 
     // 传感器自动旋转（借鉴 nextplayer：使用 SCREEN_ORIENTATION_FULL_SENSOR 真正跟随设备方向）
     // 注意：不能用 LocalContext 取 Activity，本应用 LocalContext 被替换为 localizedContext（基于 Application），
@@ -98,16 +118,22 @@ fun FlipClockScreen(
                 interactionSource = remember { MutableInteractionSource() }
             ) {
                 showControls = !showControls
+                controlsTimerToken++
             }
     ) {
-        // 翻页时钟主体
+        // 翻页时钟主体（操作栏出现时整体缩小）
         FlipClockContent(
             hours = displayHours,
             minutes = displayMinutes,
             seconds = displaySeconds,
             isLandscape = isLandscape,
             clockFont = uiState.selectedFont,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier
+                .align(Alignment.Center)
+                .graphicsLayer {
+                    scaleX = clockScale
+                    scaleY = clockScale
+                }
         )
 
         // 倒计时显示（已移除文案，只通过时钟数字显示）
@@ -122,12 +148,22 @@ fun FlipClockScreen(
             FlipClockControls(
                 context = context,
                 onBack = onBack,
-                onCountdownClick = { showCountdownDialog = true },
-                onFontClick = { showFontSelector = true },
+                onCountdownClick = {
+                    controlsTimerToken++
+                    showCountdownDialog = true
+                },
+                onFontClick = {
+                    controlsTimerToken++
+                    showFontSelector = true
+                },
                 isCountdownActive = uiState.isCountdownActive,
-                onCancelCountdown = { viewModel.cancelCountdown() },
+                onCancelCountdown = {
+                    controlsTimerToken++
+                    viewModel.cancelCountdown()
+                },
                 useSensorRotation = useSensorRotation,
                 onToggleSensorRotation = {
+                    controlsTimerToken++
                     useSensorRotation = !useSensorRotation
                     PreferencesManager.saveFlipClockSensorRotation(context, useSensorRotation)
                 }

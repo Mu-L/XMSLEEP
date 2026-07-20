@@ -142,6 +142,7 @@ class MeditationPlayerManager private constructor() {
     fun resume(context: Context) {
         if (!requestAudioFocus(context)) return
         exoPlayer?.playWhenReady = true
+        _isPlaying.value = true
         Logger.d(TAG, "恢复冥想播放")
     }
 

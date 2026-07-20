@@ -91,18 +91,48 @@
     },
     {
       "id": "sleep_zen_hut_20min",
-      "name": "禅意助眠20分钟·放下杂念",
-      "nameEn": "20min Zen Sleep · Release Thoughts",
-      "nameJa": "禅意助眠20分·雑念を手放す",
-      "nameKo": "선의 수면 20분·잡념 내려놓기",
-      "nameRu": "20 минут дзен-сна · отпустите мысли",
-      "nameZhTW": "禪意助眠20分鐘·放下雜念",
+      "name": "寺庙流水钟声20分钟·心境平和",
+      "nameEn": "20min Temple Water & Bells · Inner Peace",
+      "nameJa": "寺院の流水と鐘20分·穏やかな心境",
+      "nameKo": "사찰 물소리 종소리 20분·고요한 마음",
+      "nameRu": "20 минут храмовых колоколов и воды · спокойствие духа",
+      "nameZhTW": "寺廟流水鐘聲20分鐘·心境平和",
       "category": "meditation_sleep",
-      "duration": 1202,
+      "duration": 1203,
       "audioUrl": "",
-      "coverUrl": "http://i1.hdslb.com/bfs/archive/dfd170e80bdbac32c52ffc9c326ba01b6af73112.jpg",
-      "sourceId": "BV1N8DSBCE3j",
-      "sourceTitle": "20分钟禅意助眠冥想小屋"
+      "coverUrl": "",
+      "sourceId": "BV1Mg411M7Va",
+      "sourceTitle": "寺庙流水钟声"
+    },
+    {
+      "id": "sleep_prebed_30min",
+      "name": "世界顶级催眠曲30分钟·三秒入睡",
+      "nameEn": "30min World Top Lullaby · Fall Asleep in 3s",
+      "nameJa": "世界最高の子守唄30分·3秒で入眠",
+      "nameKo": "세계 최고의 자장가 30분·3초 만에 수면",
+      "nameRu": "30 минут лучшей колыбельной · засыпание за 3 секунды",
+      "nameZhTW": "世界頂級催眠曲30分鐘·三秒入睡",
+      "category": "meditation_sleep",
+      "duration": 1855,
+      "audioUrl": "",
+      "coverUrl": "",
+      "sourceId": "BV1e841177cX",
+      "sourceTitle": "世界顶级催眠曲"
+    },
+    {
+      "id": "sleep_empty_mind_15min",
+      "name": "五音疗疾20分钟·土音入脾",
+      "nameEn": "20min Five Tone Healing · Earth Tone for Spleen",
+      "nameJa": "五音療疾20分·土音で脾を養う",
+      "nameKo": "오음 요질 20분·토음으로 비를 양한다",
+      "nameRu": "20 минут пятиязычной терапии · земляный тон для селезёнки",
+      "nameZhTW": "五音療疾20分鐘·土音入脾",
+      "category": "meditation_sleep",
+      "duration": 1237,
+      "audioUrl": "",
+      "coverUrl": "",
+      "sourceId": "BV1V64y1P7FV",
+      "sourceTitle": "五音疗疾·土音入脾"
     },
     {
       "id": "sleep_singing_bowl_30min",
@@ -120,21 +150,6 @@
       "sourceTitle": "自然音颂钵 半小时"
     },
     {
-      "id": "sleep_prebed_30min",
-      "name": "睡前冥想30分钟·极速解压",
-      "nameEn": "30min Pre-Sleep · Quick Release",
-      "nameJa": "睡前冥想30分·急速リラックス",
-      "nameKo": "취침 전 명상 30분· rapid 스트레스 해소",
-      "nameRu": "30 минут перед сном · быстрое снятие напряжения",
-      "nameZhTW": "睡前冥想30分鐘·極速解壓",
-      "category": "meditation_sleep",
-      "duration": 1800,
-      "audioUrl": "",
-      "coverUrl": "http://i0.hdslb.com/bfs/archive/0e726a903b0e0bb3f1a153acb19ccb64fc904c98.jpg",
-      "sourceId": "BV1ZyZ4BJEmu",
-      "sourceTitle": "30min睡前冥想"
-    },
-    {
       "id": "sleep_rain_cabin_50min",
       "name": "森林雨夜50分钟·深度睡眠",
       "nameEn": "50min Forest Rain · Deep Sleep",
@@ -148,36 +163,6 @@
       "coverUrl": "http://i2.hdslb.com/bfs/archive/d8aed00790909d40b84c82736b80450476406d86.jpg",
       "sourceId": "BV1TVVf62EoB",
       "sourceTitle": "夏季小山城雨夜"
-    },
-    {
-      "id": "sleep_empty_mind_15min",
-      "name": "放空思维15分钟·重置能量",
-      "nameEn": "15min Empty Mind · Reset Energy",
-      "nameJa": "思考を空に15分·エネルギーリセット",
-      "nameKo": "생각 비우기 15분·에너지 리셋",
-      "nameRu": "15 минут пустоты ума · перезагрузка энергии",
-      "nameZhTW": "放空思維15分鐘·重置能量",
-      "category": "meditation_sleep",
-      "duration": 851,
-      "audioUrl": "",
-      "coverUrl": "http://i1.hdslb.com/bfs/archive/3d2f8cbf075384fa8757c640436b94fcb6c566ac.jpg",
-      "sourceId": "BV1hDVhzdE1A",
-      "sourceTitle": "15min助眠冥想"
-    },
-    {
-      "id": "sleep_insomnia_inn_30min",
-      "name": "失眠旅馆30分钟·情景助眠",
-      "nameEn": "30min Insomnia Inn · Scene Sleep",
-      "nameJa": "不眠の宿30分·情景助眠",
-      "nameKo": "불면 호텔 30분·시나리오 수면",
-      "nameRu": "30 минут гостиницы бессонницы · сон по сценарию",
-      "nameZhTW": "失眠旅館30分鐘·情景助眠",
-      "category": "meditation_sleep",
-      "duration": 1770,
-      "audioUrl": "",
-      "coverUrl": "http://i0.hdslb.com/bfs/archive/a3d8b678d05e727d6e468efcbdc6666aea18d996.jpg",
-      "sourceId": "BV154sfzTEyp",
-      "sourceTitle": "kikki 30min助眠冥想引导"
     },
     {
       "id": "sleep_forest_melody_47min",
@@ -194,7 +179,6 @@
       "sourceId": "BV1de1hB8Ed6",
       "sourceTitle": "森林低语的旋律"
     },
-
     {
       "id": "practice_triple_burner_30min",
       "name": "打通三焦30分钟·海边深呼吸",
@@ -360,7 +344,6 @@
       "sourceId": "BV1B5RvBwEja",
       "sourceTitle": "身体扫描 30 分钟"
     },
-
     {
       "id": "relax_troubles_30min",
       "name": "消除烦恼30分钟·清空大脑",
@@ -452,36 +435,6 @@
       "sourceTitle": "森林低语的旋律"
     },
     {
-      "id": "relax_zen_hut_20min",
-      "name": "禅意助眠20分钟·放下杂念",
-      "nameEn": "20min Zen Sleep · Release Thoughts",
-      "nameJa": "禅意助眠20分·雑念を手放す",
-      "nameKo": "선의 수면 20분·잡념 내려놓기",
-      "nameRu": "20 минут дзен-сна · отпустите мысли",
-      "nameZhTW": "禪意助眠20分鐘·放下雜念",
-      "category": "meditation_relax",
-      "duration": 1202,
-      "audioUrl": "",
-      "coverUrl": "http://i1.hdslb.com/bfs/archive/dfd170e80bdbac32c52ffc9c326ba01b6af73112.jpg",
-      "sourceId": "BV1N8DSBCE3j",
-      "sourceTitle": "20分钟禅意助眠冥想小屋"
-    },
-    {
-      "id": "relax_prebed_30min",
-      "name": "睡前冥想30分钟·极速解压",
-      "nameEn": "30min Pre-Sleep · Quick Release",
-      "nameJa": "睡前冥想30分·急速リラックス",
-      "nameKo": "취침 전 명상 30분· rapid 스트레스 해소",
-      "nameRu": "30 минут перед сном · быстрое снятие напряжения",
-      "nameZhTW": "睡前冥想30分鐘·極速解壓",
-      "category": "meditation_relax",
-      "duration": 1800,
-      "audioUrl": "",
-      "coverUrl": "http://i0.hdslb.com/bfs/archive/0e726a903b0e0bb3f1a153acb19ccb64fc904c98.jpg",
-      "sourceId": "BV1ZyZ4BJEmu",
-      "sourceTitle": "30min睡前冥想"
-    },
-    {
       "id": "relax_rain_cabin_50min",
       "name": "森林雨夜50分钟·深度睡眠",
       "nameEn": "50min Forest Rain · Deep Sleep",
@@ -497,21 +450,50 @@
       "sourceTitle": "夏季小山城雨夜"
     },
     {
-      "id": "relax_empty_mind_15min",
-      "name": "放空思维15分钟·重置能量",
-      "nameEn": "15min Empty Mind · Reset Energy",
-      "nameJa": "思考を空に15分·エネルギーリセット",
-      "nameKo": "생각 비우기 15분·에너지 리셋",
-      "nameRu": "15 минут пустоты ума · перезагрузка энергии",
-      "nameZhTW": "放空思維15分鐘·重置能量",
+      "id": "relax_zen_hut_20min",
+      "name": "世界顶级催眠音43分钟·沉浸放松",
+      "nameEn": "43min World Top Hypnosis · Immersive Relax",
+      "nameJa": "世界最高の催眠音43分·没入リラックス",
+      "nameKo": "세계 최고의 최면음 43분·몰입 이완",
+      "nameRu": "43 минуты лучшего гипнотического звука · погружение в расслабление",
+      "nameZhTW": "世界頂級催眠音43分鐘·沉浸放鬆",
       "category": "meditation_relax",
-      "duration": 851,
+      "duration": 2635,
       "audioUrl": "",
-      "coverUrl": "http://i1.hdslb.com/bfs/archive/3d2f8cbf075384fa8757c640436b94fcb6c566ac.jpg",
-      "sourceId": "BV1hDVhzdE1A",
-      "sourceTitle": "15min助眠冥想"
+      "coverUrl": "",
+      "sourceId": "BV1rNyABQEjE",
+      "sourceTitle": "世界顶级催眠音"
     },
-
+    {
+      "id": "relax_prebed_30min",
+      "name": "科学家公认最强催眠曲3小时·深度助眠",
+      "nameEn": "3h Scientist-Approved Lullaby · Deep Sleep",
+      "nameJa": "科学者推奨最強の子守唄3時間·深い睡眠",
+      "nameKo": "과학자 인정 최고의 자장가 3시간·깊은 수면",
+      "nameRu": "3 часа признанной учёными колыбельной · глубокий сон",
+      "nameZhTW": "科學家公認最強催眠曲3小時·深度助眠",
+      "category": "meditation_relax",
+      "duration": 10857,
+      "audioUrl": "",
+      "coverUrl": "",
+      "sourceId": "BV1X1421U79L",
+      "sourceTitle": "科学家试验公认最强催眠曲"
+    },
+    {
+      "id": "relax_empty_mind_15min",
+      "name": "消除压力3小时·褪黑素释放",
+      "nameEn": "3h Stress Relief · Melatonin Release",
+      "nameJa": "ストレス解消3時間·メラトニン放出",
+      "nameKo": "스트레스 해소 3시간·멜라토닌 분비",
+      "nameRu": "3 часа снятия стресса · выработка мелатонина",
+      "nameZhTW": "消除壓力3小時·褪黑素釋放",
+      "category": "meditation_relax",
+      "duration": 10814,
+      "audioUrl": "",
+      "coverUrl": "",
+      "sourceId": "BV19C411L7tW",
+      "sourceTitle": "消除压力褪黑素释放"
+    },
     {
       "id": "mindful_focus_30min",
       "name": "高效醒脑30分钟·记忆增强",
@@ -661,21 +643,6 @@
       "coverUrl": "http://i0.hdslb.com/bfs/archive/6d39c4307eca01115adb206a2aa2b5bb688c4d6a.jpg",
       "sourceId": "BV1gsN76mEXx",
       "sourceTitle": "心气舒展30分钟"
-    },
-    {
-      "id": "mindful_insomnia_inn_30min",
-      "name": "失眠旅馆30分钟·情景助眠",
-      "nameEn": "30min Insomnia Inn · Scene Sleep",
-      "nameJa": "不眠の宿30分·情景助眠",
-      "nameKo": "불면 호텔 30분·시나리오 수면",
-      "nameRu": "30 минут гостиницы бессонницы · сон по сценарию",
-      "nameZhTW": "失眠旅館30分鐘·情景助眠",
-      "category": "mindfulness",
-      "duration": 1770,
-      "audioUrl": "",
-      "coverUrl": "http://i0.hdslb.com/bfs/archive/a3d8b678d05e727d6e468efcbdc6666aea18d996.jpg",
-      "sourceId": "BV154sfzTEyp",
-      "sourceTitle": "kikki 30min助眠冥想引导"
     }
   ]
 }

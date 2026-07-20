@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -35,13 +34,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.res.painterResource
 import org.xmsleep.app.R
 import org.xmsleep.app.i18n.LanguageManager
 import org.xmsleep.app.meditation.BilibiliAudioHelper
 import org.xmsleep.app.meditation.MeditationPlayerManager
 import org.xmsleep.app.timer.TimerManager
 import org.xmsleep.app.ui.TimerDialog
-import org.xmsleep.app.ui.components.PlayingAnimation
 import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,6 +68,14 @@ fun MeditationPlayerScreen(
         manifest?.sessions?.filter { it.category == categoryId } ?: emptyList()
     }
 
+    // 从管理器同步状态（仅同步属于当前分类的会话，避免跨分类误跳转）
+    val managerIsPlaying by playerManager.isPlaying.collectAsState()
+    val managerSessionId by playerManager.currentSessionId.collectAsState()
+    val managerCategoryId by playerManager.currentCategoryId.collectAsState()
+    val isLoop by playerManager.isLoop.collectAsState()
+    val timerActive by timerManager.isTimerActive.collectAsState()
+    val timerLeft by timerManager.timeLeftMillis.collectAsState()
+
     var currentSessionIndex by remember {
         mutableIntStateOf(
             if (sessionId != null) {
@@ -77,15 +84,17 @@ fun MeditationPlayerScreen(
         )
     }
 
-    val currentSession = sessions.getOrNull(currentSessionIndex)
+    // 始终同步管理器中的播放会话到本地（修复语言切换后状态丢失）
+    LaunchedEffect(managerSessionId, managerCategoryId, sessions) {
+        if (managerSessionId != null && managerCategoryId == categoryId && sessions.isNotEmpty()) {
+            val index = sessions.indexOfFirst { it.id == managerSessionId }
+            if (index >= 0 && index != currentSessionIndex) {
+                currentSessionIndex = index
+            }
+        }
+    }
 
-    // 从管理器同步状态（仅同步属于当前分类的会话，避免跨分类误跳转）
-    val managerIsPlaying by playerManager.isPlaying.collectAsState()
-    val managerSessionId by playerManager.currentSessionId.collectAsState()
-    val managerCategoryId by playerManager.currentCategoryId.collectAsState()
-    val isLoop by playerManager.isLoop.collectAsState()
-    val timerActive by timerManager.isTimerActive.collectAsState()
-    val timerLeft by timerManager.timeLeftMillis.collectAsState()
+    val currentSession = sessions.getOrNull(currentSessionIndex)
 
     // 当前播放的会话是否属于本分类
     val isManagerPlayingThisCategory = managerIsPlaying && managerCategoryId == categoryId
@@ -143,13 +152,18 @@ fun MeditationPlayerScreen(
         playerManager.initialize(context)
     }
 
-    // 同步管理器的会话到本地 currentSessionIndex（仅当播放的会话属于本分类时）
-    LaunchedEffect(managerSessionId, managerCategoryId) {
-        if (managerSessionId != null && managerCategoryId == categoryId) {
-            val index = sessions.indexOfFirst { it.id == managerSessionId }
-            if (index >= 0 && index != currentSessionIndex) {
-                currentSessionIndex = index
+    // 注册倒计时监听器：倒计时结束后停止冥想音频（修复在冥想页设倒计时时无人停止的问题）
+    DisposableEffect(Unit) {
+        val listener = object : TimerManager.TimerListener {
+            override fun onTimerTick(timeLeftMillis: Long) {}
+            override fun onTimerFinished(durationMinutes: Int) {
+                playerManager.stop()
             }
+            override fun onTimerCancelled() {}
+        }
+        timerManager.addListener(listener)
+        onDispose {
+            timerManager.removeListener(listener)
         }
     }
 
@@ -216,7 +230,7 @@ fun MeditationPlayerScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 冥想图标区域（涟漪在外层，圆形背景呼吸缩放）
+            // 冥想图标区域（涟漪在外层，呼吸缩放直接作用于图标，无圆背景）
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(200.dp)
@@ -225,7 +239,7 @@ fun MeditationPlayerScreen(
                     RippleAnimation()
                 }
 
-                // 圆形背景 + 冥想图标（呼吸效果）
+                // 冥想图标（呼吸效果，带轻微透明度）
                 BreathingCircle(
                     isPlaying = isCurrentSessionPlaying,
                     modifier = Modifier.size(120.dp)
@@ -233,7 +247,7 @@ fun MeditationPlayerScreen(
                     Icon(
                         imageVector = Icons.Default.SelfImprovement,
                         contentDescription = context.getString(R.string.meditation),
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
                         modifier = Modifier.size(64.dp)
                     )
                 }
@@ -261,65 +275,6 @@ fun MeditationPlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 进度条上方操作行：左上角循环按钮，右上角倒计时按钮
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // 左上角：循环播放（选中时图标变主题色，无圆形背景）
-                IconButton(
-                    onClick = { playerManager.toggleLoop() },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Autorenew,
-                        contentDescription = context.getString(R.string.loop_play),
-                        tint = if (isLoop) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                // 右上角：倒计时（与白噪音页区分：沙漏图标 + 内联，复用全局 TimerManager 不冲突）
-                Box(contentAlignment = Alignment.Center) {
-                    IconButton(
-                        onClick = { showTimerDialog = true },
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(
-                                if (timerActive) MaterialTheme.colorScheme.primaryContainer
-                                else Color.Transparent
-                            )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.HourglassEmpty,
-                            contentDescription = context.getString(R.string.set_countdown),
-                            tint = if (timerActive) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    if (timerActive && timerLeft > 0) {
-                        val minutes = (timerLeft / 60000).toInt()
-                        val seconds = ((timerLeft % 60000) / 1000).toInt()
-                        val badgeText = if (minutes > 0) "$minutes:${seconds.toString().padStart(2, '0')}"
-                        else "${seconds}s"
-                        Badge(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .offset(x = 4.dp, y = (-4).dp)
-                        ) {
-                            Text(
-                                text = badgeText,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                }
-            }
-
             // 波浪进度条
             me.saket.squiggles.SquigglySlider(
                 value = progress,
@@ -342,42 +297,110 @@ fun MeditationPlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 播放/暂停按钮（长方形，图标+文字）
-            Surface(
-                onClick = {
-                    if (!isLoading) togglePlayPause()
-                },
-                modifier = Modifier
-                    .width(180.dp)
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                color = MaterialTheme.colorScheme.primary,
-                enabled = true
+            // 操作行：左=循环，中=播放/暂停，右=倒计时
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                // 左：循环播放（选中时图标变主题色，背景样式参考电台按钮）
+                Surface(
+                    onClick = { playerManager.toggleLoop() },
+                    modifier = Modifier.size(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isLoop) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                    else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp
-                        )
-                    } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Icon(
-                            imageVector = if (isCurrentSessionPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            painter = painterResource(R.drawable.repeat_24),
+                            contentDescription = context.getString(R.string.loop_play),
+                            tint = if (isLoop) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(24.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isCurrentSessionPlaying) context.getString(R.string.pause) else context.getString(R.string.play),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
+                    }
+                }
+
+                // 中：播放/暂停按钮（圆角与循环/倒计时一致）
+                Surface(
+                    onClick = {
+                        if (!isLoading) togglePlayPause()
+                    },
+                    modifier = Modifier
+                        .width(140.dp)
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                imageVector = if (isCurrentSessionPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isCurrentSessionPlaying) context.getString(R.string.pause) else context.getString(R.string.play),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+
+                // 右：倒计时（复用全局 TimerManager，不冲突，背景样式参考电台按钮）
+                Box(contentAlignment = Alignment.Center) {
+                    Surface(
+                        onClick = { showTimerDialog = true },
+                        modifier = Modifier.size(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (timerActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.HourglassEmpty,
+                                contentDescription = context.getString(R.string.set_countdown),
+                                tint = if (timerActive) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    if (timerActive && timerLeft > 0) {
+                        val minutes = (timerLeft / 60000).toInt()
+                        val seconds = ((timerLeft % 60000) / 1000).toInt()
+                        val badgeText = if (minutes > 0) "$minutes:${seconds.toString().padStart(2, '0')}"
+                        else "${seconds}s"
+                        Badge(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 4.dp, y = (-4).dp)
+                        ) {
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelSmall
+                            )
+                        }
                     }
                 }
             }
@@ -491,10 +514,6 @@ private fun BreathingCircle(
                 scaleY = scale
                 this.alpha = alpha
             }
-            .background(
-                color = MaterialTheme.colorScheme.primaryContainer,
-                shape = CircleShape
-            )
     ) {
         content()
     }
@@ -504,96 +523,43 @@ private fun BreathingCircle(
 private fun RippleAnimation() {
     val infiniteTransition = rememberInfiniteTransition(label = "ripple")
 
-    val rippleScale1 by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
+    // 单个圆：从中心向外扩散并透明消失，消失后自动重头开始（始终只有一个圆）
+    val rippleScale by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
         targetValue = 1.0f,
         animationSpec = infiniteRepeatable(
             animation = tween(2000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "ripple1"
+        label = "rippleScale"
     )
-    val rippleAlpha1 by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
+    val rippleAlpha by infiniteTransition.animateFloat(
+        initialValue = 0f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
+            animation = keyframes {
+                durationMillis = 2000
+                0f at 0 with FastOutSlowInEasing
+                0.3f at 600 with FastOutSlowInEasing
+                0f at 2000 with FastOutSlowInEasing
+            },
             repeatMode = RepeatMode.Restart
         ),
-        label = "ripple_alpha1"
+        label = "rippleAlpha"
     )
 
-    val rippleScale2 by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, delayMillis = 667, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple2"
-    )
-    val rippleAlpha2 by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, delayMillis = 667, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple_alpha2"
-    )
-
-    val rippleScale3 by infiniteTransition.animateFloat(
-        initialValue = 0.3f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, delayMillis = 1333, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple3"
-    )
-    val rippleAlpha3 by infiniteTransition.animateFloat(
-        initialValue = 0.4f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, delayMillis = 1333, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "ripple_alpha3"
-    )
-
+    val rippleColor = MaterialTheme.colorScheme.primary
     Box(contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier
                 .size(200.dp)
                 .graphicsLayer {
-                    scaleX = rippleScale1
-                    scaleY = rippleScale1
-                    alpha = rippleAlpha1
+                    scaleX = rippleScale
+                    scaleY = rippleScale
+                    alpha = rippleAlpha
                 }
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-        )
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .graphicsLayer {
-                    scaleX = rippleScale2
-                    scaleY = rippleScale2
-                    alpha = rippleAlpha2
-                }
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
-        )
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .graphicsLayer {
-                    scaleX = rippleScale3
-                    scaleY = rippleScale3
-                    alpha = rippleAlpha3
-                }
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
+                .background(rippleColor.copy(alpha = 1f))
         )
     }
 }
