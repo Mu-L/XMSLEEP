@@ -315,34 +315,42 @@ If you have any questions, please contact us through the in-app contact method.<
     <string-array name="healing_quotes_morning">
         <item>Good morning, may your day be full of energy</item>
         <item>A new day, a new beginning</item>
-        <item>Dawn breaks, beauty arrives as promised</item>
-        <item>Greet the new day with a smile</item>
+        <item>Wake up! Remember to wash your face and brush your teeth, especially eat breakfast</item>
+        <item>Another new 24 hours</item>
         <item>Morning dew, crystal clear</item>
         <item>Stay energized today</item>
         <item>The early bird catches the worm</item>
-        <item>A beautiful day starts now</item>
+        <item>A calm day starts now</item>
         <item>May every morning be full of hope</item>
-        <item>Dawn appears, all things revive</item>
+        <item>When you hit a bump, don\'t worry — there\'s always a way out</item>
         <item>Good morning, be your best self</item>
         <item>A new day, full of possibilities</item>
         <item>Morning breeze brings good mood</item>
-        <item>Stay happy and joyful today</item>
-        <item>Good morning, my friend</item>
-        <item>Start a beautiful day with good mood</item>
-        <item>Good morning, may you always smile</item>
-        <item>Morning light glimmers, time stands still</item>
+        <item>Stay calm and happy today</item>
+        <item>Good morning~~~~, my friend</item>
+        <item>Those who work steadily, time will not let them down</item>
+        <item>It\'s normal to hit bumps sometimes — take a breath, you\'ll find a way</item>
+        <item>Keep your pace, it\'s okay to go slow, just keep moving forward</item>
         <item>A new day, new expectations</item>
         <item>Rise early, shine bright</item>
         <item>Morning dew, crystal clear</item>
-        <item>Good morning, live your life well</item>
-        <item>Morning breeze, refreshing mood</item>
-        <item>A new day, full of hope</item>
-        <item>Morning birdsong, pleasant to hear</item>
+        <item>Good morning, live a happy life today</item>
+        <item>Mountains and rivers are only temporary — as long as you don\'t stop, the road will open</item>
+        <item>Let go of anxiety, focus on the small things you can control</item>
+        <item>Storms are just interludes — lasting rewards go to those who wait</item>
         <item>Face challenges with positive attitude</item>
         <item>Good morning, may everything go well</item>
-        <item>Dawn breaks, warm as always</item>
+        <item>Good morning, classmate!</item>
         <item>Keep a good mood today</item>
-        <item>Morning serenity brings peace of mind</item>
+        <item>Don\'t envy others\' progress — everyone has their own timeline</item>
+        <item>Daydreaming is okay</item>
+        <item>Take it easy, nobody\'s chasing you</item>
+        <item>It\'s okay to be ordinary</item>
+        <item>If you can\'t do it, just let it be</item>
+        <item>Drink some water first, your brain will clear up</item>
+        <item>Maybe do something small just for yourself right now</item>
+        <item>You\'re stronger than you think</item>
+        <item>Just take the next step in front of you</item>
     </string-array>
     
     <!-- Healing Quotes - Afternoon -->
@@ -375,8 +383,16 @@ If you have any questions, please contact us through the in-app contact method.<
         <item>Did you save a fox on a snowy mountain?</item>
         <item>Neck sore? Do some neck circles</item>
         <item>Plant a sunflower at your door</item>
-        <item>Hahahahahahaha</item>
+        <item>Hahahahahahahaha</item>
         <item>Give your tired soul a rest</item>
+        <item>It\'s okay to be unhappy, no big deal</item>
+        <item>Don\'t be so hard on yourself</item>
+        <item>Please be a little nicer to yourself</item>
+        <item>Sit if you can, don\'t stand</item>
+        <item>Finish what\'s in front of you first, then think about the rest</item>
+        <item>You\'ve worked hard, that\'s enough for today</item>
+        <item>Being able to sleep well is a blessing</item>
+        <item>The rustling sound of turning pages, like scratching your ear</item>
     </string-array>
     
     <!-- Healing Quotes - Evening -->
@@ -386,15 +402,15 @@ If you have any questions, please contact us through the in-app contact method.<
         <item>Stars don\'t ask travelers, time rewards the devoted</item>
         <item>Hard work all day, tuck yourself in and sleep well</item>
         <item>Are you happy today? Rest well tonight either way</item>
-        <item>Sleep well tonight, wake up energized tomorrow</item>
+        <item>Sleep well tonight, wake up well tomorrow</item>
         <item>Today watch your diet, avoid greasy food</item>
         <item>Good night, have sweet dreams</item>
         <item>Night is gentle, so are you</item>
         <item>Let go of today\'s worries, rest well</item>
         <item>Good night, may the world treat you gently</item>
         <item>Deep night, perfect for emptying your mind</item>
-        <item>Stars light up, illuminate your dreams</item>
-        <item>Evening breeze brings good mood</item>
+        <item>Current obstacles are just tests before the final level</item>
+        <item>Stay patient, your results are on the way</item>
         <item>Night\'s tranquility heals everything</item>
         <item>May you sleep dreamlessly till dawn</item>
         <item>Did you daydream well today?</item>
@@ -405,12 +421,20 @@ If you have any questions, please contact us through the in-app contact method.<
         <item>It\'s late, let your soul rest</item>
         <item>Are there stars out tonight where you are?</item>
         <item>Has the evening breeze arrived?</item>
-        <item>Night\'s gentleness belongs to you</item>
-        <item>Sleep well tonight, better tomorrow</item>
+        <item>A single spark can start a prairie fire</item>
+        <item>Difficulties are temporary, growth is continuous</item>
         <item>Let me tell you a secret... ssshhh...</item>
         <item>Good night, be your true self</item>
         <item>Eat well, sleep well</item>
         <item>Let go of fatigue, embrace sweet dreams</item>
+        <item>Don\'t feel like socializing today? Just give yourself back to yourself</item>
+        <item>Being lazy sometimes is being honest with your body</item>
+        <item>Forgot what you were going to do? Just don\'t think about it for now</item>
+        <item>Those three minutes under the instant noodle lid, that\'s your blank space</item>
+        <item>Bubbles from a cold cola tickle your nose a little</item>
+        <item>Your back hurts? Just shift to a more comfortable position</item>
+        <item>When your shoulders relax, the world feels a little lighter too</item>
+        <item>Pull the blanket up higher, it\'s okay to just show your nose tip</item>
     </string-array>
     
     <!-- Weather Smart Recommend -->

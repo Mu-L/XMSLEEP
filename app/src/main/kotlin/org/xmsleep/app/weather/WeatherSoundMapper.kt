@@ -200,9 +200,9 @@ object WeatherSoundMapper {
         }
     }
 
-    fun getRecommendedSoundIds(context: Context, weatherCode: Int): List<String> {
+    fun getRecommendedSoundIds(context: Context, weatherCode: Int, isDay: Boolean = true): List<String> {
         val mappings = getMappings(context)
-        val weatherType = WeatherCodeMapper.toWeatherType(weatherCode)
+        val weatherType = WeatherCodeMapper.toWeatherType(weatherCode, isDay)
 
         for (mapping in mappings) {
             if (mapping.weatherTypes.contains(weatherType)) {

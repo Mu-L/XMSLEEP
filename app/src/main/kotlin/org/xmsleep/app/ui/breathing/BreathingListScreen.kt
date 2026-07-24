@@ -218,10 +218,12 @@ private fun getCategoryTag(context: Context, categoryId: String): String {
 
 private fun loadMeditationManifest(context: Context): MeditationManifest? {
     return try {
-        val inputStream = context.assets.open("meditation_remote.json")
-        val reader = InputStreamReader(inputStream)
-        val type = object : TypeToken<MeditationManifest>() {}.type
-        Gson().fromJson(reader, type)
+        context.assets.open("meditation_remote.json").use { inputStream ->
+            InputStreamReader(inputStream).use { reader ->
+                val type = object : TypeToken<MeditationManifest>() {}.type
+                Gson().fromJson(reader, type)
+            }
+        }
     } catch (e: Exception) {
         null
     }

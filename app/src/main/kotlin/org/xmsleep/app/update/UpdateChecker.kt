@@ -55,33 +55,33 @@ class UpdateChecker(
             val request = requestBuilder.get().build()
             
             val response = client.newCall(request).execute()
-            
-            // 检查 rate limit
-            val remaining = response.header("X-RateLimit-Remaining")?.toIntOrNull() ?: -1
-            val rateLimitReset = response.header("X-RateLimit-Reset")?.toLongOrNull()
-            
-            Logger.d("UpdateChecker", "HTTP响应码: ${response.code}, RateLimit剩余: $remaining")
-            
-            if (!response.isSuccessful) {
-                // 处理 rate limit 错误
-                if (response.code == 403 && remaining == 0) {
-                    // Rate limit 已耗尽
-                    val resetTime = rateLimitReset?.let { 
-                        java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
-                            .format(java.util.Date(it * 1000))
-                    } ?: "稍后"
-                    Logger.e("UpdateChecker", "Rate limit已耗尽，重置时间: $resetTime")
-                    throw IOException("GitHub API 请求次数已达上限，请于 $resetTime 后重试")
+            response.use {
+                // 检查 rate limit
+                val remaining = it.header("X-RateLimit-Remaining")?.toIntOrNull() ?: -1
+                val rateLimitReset = it.header("X-RateLimit-Reset")?.toLongOrNull()
+                
+                Logger.d("UpdateChecker", "HTTP响应码: ${it.code}, RateLimit剩余: $remaining")
+                
+                if (!it.isSuccessful) {
+                    // 处理 rate limit 错误
+                    if (it.code == 403 && remaining == 0) {
+                        // Rate limit 已耗尽
+                        val resetTime = rateLimitReset?.let { 
+                            java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+                                .format(java.util.Date(it * 1000))
+                        } ?: "稍后"
+                        Logger.e("UpdateChecker", "Rate limit已耗尽，重置时间: $resetTime")
+                        throw IOException("GitHub API 请求次数已达上限，请于 $resetTime 后重试")
+                    }
+                    val errorBody = it.body?.string()
+                    Logger.e("UpdateChecker", "HTTP请求失败: ${it.code}, 响应体: $errorBody")
+                    return@withContext null
                 }
-                val errorBody = response.body?.string()
-                Logger.e("UpdateChecker", "HTTP请求失败: ${response.code}, 响应体: $errorBody")
-                return@withContext null
-            }
-            
-            val body = response.body?.string() ?: run {
-                Logger.e("UpdateChecker", "响应体为空")
-                return@withContext null
-            }
+                
+                val body = it.body?.string() ?: run {
+                    Logger.e("UpdateChecker", "响应体为空")
+                    return@withContext null
+                }
             
             Logger.d("UpdateChecker", "响应体长度: ${body.length}")
             
@@ -122,7 +122,8 @@ class UpdateChecker(
                 Logger.d("UpdateChecker", "当前版本已是最新版本或更新")
             }
             
-            null
+                null
+            }
         } catch (e: IOException) {
             // 重新抛出IOException，让UpdateViewModel正确处理
             Logger.e("UpdateChecker", "IOException: ${e.message}", e)

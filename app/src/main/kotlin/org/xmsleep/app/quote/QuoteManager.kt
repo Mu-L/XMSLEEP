@@ -80,14 +80,16 @@ class QuoteManager private constructor(private val context: Context) {
                     .build()
                 
                 val response = okHttpClient.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val json = response.body?.string()
-                    if (json != null) {
-                        gson.fromJson(json, Quote::class.java)
-                    } else null
-                } else {
-                    Logger.w(TAG, "API请求失败: ${response.code}")
-                    null
+                response.use {
+                    if (it.isSuccessful) {
+                        val json = it.body?.string()
+                        if (json != null) {
+                            gson.fromJson(json, Quote::class.java)
+                        } else null
+                    } else {
+                        Logger.w(TAG, "API请求失败: ${it.code}")
+                        null
+                    }
                 }
             } catch (e: Exception) {
                 Logger.e(TAG, "API请求异常: ${e.message}")

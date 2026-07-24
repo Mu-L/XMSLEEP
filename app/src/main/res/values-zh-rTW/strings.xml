@@ -325,46 +325,54 @@
     <string name="refresh_success">刷新成功</string>
     <string name="refresh_failed">刷新失敗</string>
     
-    <!-- 治愈句子 - 早上 -->
+    <!-- 治癒句子 - 早上 -->
     <string-array name="healing_quotes_morning">
         <item>早安，願你今天充滿能量</item>
         <item>新的一天，新的開始</item>
-        <item>晨光微露，美好如約而至</item>
-        <item>用微笑迎接嶄新的一天</item>
-        <item>早上好，我的朋友</item>
+        <item>起床了！記得洗臉刷牙，特別是要吃早餐</item>
+        <item>又是一個新的24小時</item>
+        <item>清晨的露珠，晶瑩剔透</item>
         <item>今天也要元氣滿滿哦</item>
         <item>早起的鳥兒有蟲吃，加油</item>
-        <item>美好的一天從現在開始</item>
+        <item>淡定的一天從現在開始</item>
         <item>願你的每個早晨都充滿希望</item>
-        <item>晨曦初現，萬物復甦</item>
+        <item>遇到卡點不必焦慮，辦法永遠比困難多</item>
         <item>早安，做最好的自己</item>
         <item>新的一天，充滿無限可能</item>
         <item>清晨的風，帶來好心情</item>
-        <item>今天也要開心快樂</item>
-        <item>做一個安靜的人</item>
-        <item>用好心情開啟美好一天</item>
-        <item>早安，願你笑容常在</item>
-        <item>晨光熹微，歲月靜好</item>
+        <item>今天也要淡定的開心快樂</item>
+        <item>早上好～～～～，我的朋友</item>
+        <item>踏實耕耘的人，時間不會虧待</item>
+        <item>偶爾遇到卡點很正常，歇口氣，轉頭總能找到辦法</item>
+        <item>穩住節奏，慢一點沒關係，持續向前就好</item>
         <item>新的一天，新的期待</item>
         <item>早起三光，晚起三慌</item>
         <item>清晨的露珠，晶瑩剔透</item>
-        <item>早安，今天也要努力生活</item>
-        <item>晨風輕拂，心情舒暢</item>
-        <item>新的一天，充滿希望</item>
-        <item>早晨的鳥鳴，悅耳動聽</item>
+        <item>早安，今天也要開心的生活</item>
+        <item>山重水複只是暫時，只要不停下，路總會通</item>
+        <item>把焦慮放下，專注手頭能掌控的小事</item>
+        <item>風雨只是插曲，長久的收穫，都留給願意等待的人</item>
         <item>用積極的心態迎接挑戰</item>
         <item>早安，願你一切順利</item>
-        <item>晨曦微露，溫暖如初</item>
+        <item>早上好啊這位同學</item>
         <item>今天也要保持好心情</item>
-        <item>清晨的寧靜，讓人心安</item>
+        <item>不必羨慕別人的進度，每個人都有自己的時間表</item>
+        <item>發會兒呆也沒關係</item>
+        <item>慢慢來，又沒人追你</item>
+        <item>允許自己做個普通人</item>
+        <item>做不到的事，做不到就好了</item>
+        <item>先喝口水，腦子會清楚一點</item>
+        <item>也許現在你可以做一件讓自己開心的小事討好自己</item>
+        <item>你比自己想像的能扛事</item>
+        <item>先把眼前的一步走好</item>
     </string-array>
     
-    <!-- 治愈句子 - 中午 -->
+    <!-- 治癒句子 - 中午 -->
     <string-array name="healing_quotes_afternoon">
         <item>這是一個花花的世界</item>
         <item>做一個安靜的人</item>
         <item>慢下來，感受生活的美好</item>
-        <item>中午了，你是不是該午休啦</item>
+        <item>中午了你是不是該午休啦</item>
         <item>給自己一個放鬆的時刻</item>
         <item>下午茶時間，享受悠閒</item>
         <item>多喝熱水，動起來</item>
@@ -389,26 +397,34 @@
         <item>你是不是在雪山上救過一隻狐狸</item>
         <item>脖子酸了嗎，左三圈右三圈來一遍</item>
         <item>在門口種一株向日葵吧</item>
-        <item>哈哈哈哈哈哈哈</item>
+        <item>哈哈哈哈哈哈哈哈</item>
         <item>給疲憊的心靈一個休息</item>
+        <item>不開心就不開心，沒什麼大不了</item>
+        <item>少為難自己</item>
+        <item>也請對自己好一點</item>
+        <item>能坐著就別站著</item>
+        <item>先把手頭的事做完，再想其他的</item>
+        <item>辛苦了，今天到這裡就好</item>
+        <item>能好好睡覺就是幸福</item>
+        <item>翻書頁的聲音，沙沙的，像在搔耳朵</item>
     </string-array>
     
-    <!-- 治愈句子 - 晚上 -->
+    <!-- 治癒句子 - 晚上 -->
     <string-array name="healing_quotes_evening">
         <item>現在幾點了</item>
         <item>夜深了，該休息了</item>
         <item>星光不問趕路人，歲月不負有心人</item>
         <item>辛苦一天了，蓋好被子，睡個好覺。</item>
         <item>今天開心嗎？不管怎樣，今晚好好休息。</item>
-        <item>願你今夜安眠，明日醒來元氣滿滿</item>
+        <item>今天好好睡覺，明天好好起床</item>
         <item>今日宜注意飲食，忌油膩</item>
         <item>晚安，做個好夢</item>
         <item>夜色溫柔，你也是</item>
         <item>放下一天的煩惱，好好休息</item>
         <item>晚安，願你被世界溫柔以待</item>
         <item>夜深人靜，適合放空自己</item>
-        <item>星星點燈，照亮你的夢</item>
-        <item>晚風習習，帶來好心情</item>
+        <item>眼下的阻礙，只是通關前必經的考驗</item>
+        <item>保持耐心，屬於你的成果正在路上</item>
         <item>夜晚的靜謐，治癒一切</item>
         <item>願你今夜無夢，一覺到天明</item>
         <item>今天有沒有好好發呆</item>
@@ -419,12 +435,20 @@
         <item>夜深了，讓心靈休息</item>
         <item>今夜你那裡有星星出現嗎</item>
         <item>晚風來了嗎</item>
-        <item>夜晚的溫柔，屬於你</item>
-        <item>願你今夜好眠，明日更好</item>
+        <item>星星之火，可以燎原</item>
+        <item>難題是階段性的，成長是持續性的</item>
         <item>偷偷告訴你個秘密～密～密～～～</item>
         <item>晚安，做最真實的自己</item>
         <item>好好吃飯，好好睡覺</item>
         <item>放下疲憊，擁抱美夢</item>
+        <item>今天不想社交，那就把自己還給自己</item>
+        <item>偶爾偷個懶，是對身體的誠實</item>
+        <item>忘了剛才想幹嘛，那就先不想了</item>
+        <item>泡麵蓋子壓住的那三分鐘，是屬於你的空白</item>
+        <item>冰可樂冒上來的氣泡，頂得鼻子有點癢</item>
+        <item>腰痠了就換個姿勢癱著，怎麼舒服怎麼來</item>
+        <item>肩膀沉下來的時候，世界也跟著輕了一點</item>
+        <item>把被子拉高一點，只露個鼻尖也沒關係</item>
     </string-array>
     
     <!-- 天氣智能推薦 -->

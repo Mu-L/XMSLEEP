@@ -797,9 +797,7 @@ fun SoundsScreen(
                     fontWeight = FontWeight.Bold
                 )
                 // 治愈句子（根据时段随机显示，应用启动时生成，页面切换时不刷新）
-                // 使用 LanguageManager 的当前语言作为 key，确保语言切换时重新生成句子
-                val currentLanguage = org.xmsleep.app.i18n.LanguageManager.getCurrentLanguage(context)
-                val healingQuote = remember(currentLanguage) { 
+                val healingQuote = remember { 
                     org.xmsleep.app.quote.HealingQuoteManager.getRandomQuote(context) 
                 }
                 Text(

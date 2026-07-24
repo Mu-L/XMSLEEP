@@ -349,34 +349,42 @@
     <string-array name="healing_quotes_morning">
         <item>早安，愿你今天充满能量</item>
         <item>新的一天，新的开始</item>
-        <item>晨光微露，美好如约而至</item>
-        <item>用微笑迎接崭新的一天</item>
+        <item>起床了！记得洗脸刷牙，特别是要吃早餐</item>
+        <item>又是一个新的24小时</item>
         <item>清晨的露珠，晶莹剔透</item>
         <item>今天也要元气满满哦</item>
         <item>早起的鸟儿有虫吃，加油</item>
-        <item>美好的一天从现在开始</item>
+        <item>淡定的一天从现在开始</item>
         <item>愿你的每个早晨都充满希望</item>
-        <item>晨曦初现，万物复苏</item>
+        <item>遇到卡点不必焦虑，办法永远比困难多</item>
         <item>早安，做最好的自己</item>
         <item>新的一天，充满无限可能</item>
         <item>清晨的风，带来好心情</item>
-        <item>今天也要开心快乐</item>
-        <item>早上好，我的朋友</item>
-        <item>用好心情开启美好一天</item>
-        <item>早安，愿你笑容常在</item>
-        <item>晨光熹微，岁月静好</item>
+        <item>今天也要淡定的开心快乐</item>
+        <item>早上好～～～～，我的朋友</item>
+        <item>踏实耕耘的人，时间不会亏待</item>
+        <item>偶尔遇到卡点很正常，歇口气，转头总能找到办法</item>
+        <item>稳住节奏，慢一点没关系，持续向前就好</item>
         <item>新的一天，新的期待</item>
         <item>早起三光，晚起三慌</item>
         <item>清晨的露珠，晶莹剔透</item>
-        <item>早安，今天也要努力生活</item>
-        <item>晨风轻拂，心情舒畅</item>
-        <item>新的一天，充满希望</item>
-        <item>早晨的鸟鸣，悦耳动听</item>
+        <item>早安，今天也要开心的生活</item>
+        <item>山重水复只是暂时，只要不停下，路总会通</item>
+        <item>把焦虑放下，专注手头能掌控的小事</item>
+        <item>风雨只是插曲，长久的收获，都留给愿意等待的人</item>
         <item>用积极的心态迎接挑战</item>
         <item>早安，愿你一切顺利</item>
-        <item>晨曦微露，温暖如初</item>
+        <item>早上好啊这位同学</item>
         <item>今天也要保持好心情</item>
-        <item>清晨的宁静，让人心安</item>
+        <item>不必羡慕别人的进度，每个人都有自己的时间表</item>
+        <item>发会儿呆也没关系</item>
+        <item>慢慢来，又没人追你</item>
+        <item>允许自己做个普通人</item>
+        <item>做不到的事，做不到就好了</item>
+        <item>先喝口水，脑子会清楚一点</item>
+        <item>也许现在你可以做一件让自己开心的小事讨好自己</item>
+        <item>你比自己想象的能扛事</item>
+        <item>先把眼前的一步走好</item>
     </string-array>
     
     <!-- 治愈句子 - 中午 -->
@@ -409,8 +417,16 @@
         <item>你是不是在雪山上救过一只狐狸</item>
         <item>脖子酸了吗，左三圈右三圈来一遍</item>
         <item>在门口种一株向日葵吧</item>
-        <item>哈哈哈哈哈哈哈</item>
+        <item>哈哈哈哈哈哈哈哈</item>
         <item>给疲惫的心灵一个休息</item>
+        <item>不开心就不开心，没什么大不了</item>
+        <item>少为难自己</item>
+        <item>也请对自己好一点</item>
+        <item>能坐着就别站着</item>
+        <item>先把手头的事做完，再想其他的</item>
+        <item>辛苦了，今天到这里就好</item>
+        <item>能好好睡觉就是幸福</item>
+        <item>翻书页的声音，沙沙的，像在挠耳朵</item>
     </string-array>
     
     <!-- 治愈句子 - 晚上 -->
@@ -420,15 +436,15 @@
         <item>星光不问赶路人，岁月不负有心人</item>
         <item>辛苦一天了，盖好被子，睡个好觉。</item>
         <item>今天开心吗？不管怎样，今晚好好休息。</item>
-        <item>愿你今夜安眠，明日醒来元气满满</item>
+        <item>今天好好睡觉，明天好好起床</item>
         <item>今日宜注意饮食，忌油腻</item>
         <item>晚安，做个好梦</item>
         <item>夜色温柔，你也是</item>
         <item>放下一天的烦恼，好好休息</item>
         <item>晚安，愿你被世界温柔以待</item>
         <item>夜深人静，适合放空自己</item>
-        <item>星星点灯，照亮你的梦</item>
-        <item>晚风习习，带来好心情</item>
+        <item>眼下的阻碍，只是通关前必经的考验</item>
+        <item>保持耐心，属于你的成果正在路上</item>
         <item>夜晚的静谧，治愈一切</item>
         <item>愿你今夜无梦，一觉到天明</item>
         <item>今天有没有好好发呆</item>
@@ -439,12 +455,20 @@
         <item>夜深了，让心灵休息</item>
         <item>今夜你那里有星星出现吗</item>
         <item>晚风来了吗</item>
-        <item>夜晚的温柔，属于你</item>
-        <item>愿你今夜好眠，明日更好</item>
+        <item>星星之火，可以燎原</item>
+        <item>难题是阶段性的，成长是持续性的</item>
         <item>偷偷告诉你个秘密～密～密～～～</item>
         <item>晚安，做最真实的自己</item>
         <item>好好吃饭，好好睡觉</item>
         <item>放下疲惫，拥抱美梦</item>
+        <item>今天不想社交，那就把自己还给自己</item>
+        <item>偶尔偷个懒，是对身体的诚实</item>
+        <item>忘了刚才想干嘛，那就先不想了</item>
+        <item>泡面盖子压住的那三分钟，是属于你的空白</item>
+        <item>冰可乐冒上来的气泡，顶得鼻子有点痒</item>
+        <item>腰酸了就换个姿势瘫着，怎么舒服怎么来</item>
+        <item>肩膀沉下来的时候，世界也跟着轻了一点</item>
+        <item>把被子拉高一点，只露个鼻尖也没关系</item>
     </string-array>
     
     <!-- 天气智能推荐 -->

@@ -348,7 +348,7 @@ fun AnimatedWebPImage(
     }
     
     // 记住drawable引用（用于状态追踪）
-    var animatedDrawable by remember { mutableStateOf<android.graphics.drawable.AnimatedImageDrawable?>(null) }
+    var animatedDrawable by remember { mutableStateOf<android.graphics.drawable.Drawable?>(null) }
     
     // 创建ColorMatrix来应用双色效果（基于亮度映射到深色和浅色）
     // 只有在 applyThemeColor 为 true 时才创建颜色滤镜
@@ -417,7 +417,7 @@ fun AnimatedWebPImage(
     // 使用AndroidView来显示动画WebP
     androidx.compose.ui.viewinterop.AndroidView(
         factory = { ctx ->
-            android.widget.ImageView(ctx).apply {
+            val iv = android.widget.ImageView(ctx).apply {
                 scaleType = when (contentScale) {
                     androidx.compose.ui.layout.ContentScale.Fit -> android.widget.ImageView.ScaleType.FIT_CENTER
                     androidx.compose.ui.layout.ContentScale.Crop -> android.widget.ImageView.ScaleType.CENTER_CROP
@@ -428,48 +428,54 @@ fun AnimatedWebPImage(
                     else -> android.widget.ImageView.ScaleType.FIT_CENTER
                 }
             }
-        },
-        update = { view ->
-            // 每次 drawableResId 或 colorMatrix 改变时重新加载图片
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                // API 28+ 使用ImageDecoder加载动画WebP
-                val source = android.graphics.ImageDecoder.createSource(context.resources, drawableResId)
+                val source = android.graphics.ImageDecoder.createSource(ctx.resources, drawableResId)
                 val decodedDrawable = android.graphics.ImageDecoder.decodeDrawable(source)
                 val animatedDrawableInstance = decodedDrawable as? android.graphics.drawable.AnimatedImageDrawable
                 animatedDrawable = animatedDrawableInstance
-                
-                // 应用ColorMatrix滤镜来实现双色效果（如果启用）
                 if (animatedDrawableInstance != null) {
+                    animatedDrawableInstance.repeatCount = android.graphics.drawable.AnimatedImageDrawable.REPEAT_INFINITE
                     animatedDrawableInstance.colorFilter = if (colorMatrix != null) {
                         android.graphics.ColorMatrixColorFilter(colorMatrix)
-                    } else {
-                        null // 不应用滤镜，保持原始颜色
-                    }
-                    // 如果需要播放，启动动画
-                    if (isPlaying && !animatedDrawableInstance.isRunning) {
-                        animatedDrawableInstance.repeatCount = android.graphics.drawable.AnimatedImageDrawable.REPEAT_INFINITE
-                        animatedDrawableInstance.start()
-                    } else if (!isPlaying && animatedDrawableInstance.isRunning) {
-                        animatedDrawableInstance.stop()
-                    }
+                    } else null
+                    if (isPlaying) animatedDrawableInstance.start()
                 } else {
-                    // 如果是静态图片，也应用滤镜（如果启用）
                     decodedDrawable.colorFilter = if (colorMatrix != null) {
                         android.graphics.ColorMatrixColorFilter(colorMatrix)
-                    } else {
-                        null
-                    }
+                    } else null
                 }
-                view.setImageDrawable(decodedDrawable)
+                iv.setImageDrawable(decodedDrawable)
             } else {
-                // API 28以下使用传统方式加载（不支持动画）
-                view.setImageResource(drawableResId)
-                // 应用ColorMatrix滤镜（如果启用）
+                iv.setImageResource(drawableResId)
+                iv.colorFilter = if (colorMatrix != null) {
+                    android.graphics.ColorMatrixColorFilter(colorMatrix)
+                } else null
+            }
+            iv
+        },
+        update = { view ->
+            // 仅更新 colorFilter 和动画状态，不重新解码图片
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val anim = animatedDrawable as? android.graphics.drawable.AnimatedImageDrawable
+                if (anim != null) {
+                    anim.colorFilter = if (colorMatrix != null) {
+                        android.graphics.ColorMatrixColorFilter(colorMatrix)
+                    } else null
+                    if (isPlaying && !anim.isRunning) {
+                        anim.repeatCount = android.graphics.drawable.AnimatedImageDrawable.REPEAT_INFINITE
+                        anim.start()
+                    } else if (!isPlaying && anim.isRunning) {
+                        anim.stop()
+                    }
+                } else {
+                    view.colorFilter = if (colorMatrix != null) {
+                        android.graphics.ColorMatrixColorFilter(colorMatrix)
+                    } else null
+                }
+            } else {
                 view.colorFilter = if (colorMatrix != null) {
                     android.graphics.ColorMatrixColorFilter(colorMatrix)
-                } else {
-                    null
-                }
+                } else null
             }
         },
         modifier = modifier

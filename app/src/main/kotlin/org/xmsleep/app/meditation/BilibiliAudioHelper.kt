@@ -49,22 +49,24 @@ object BilibiliAudioHelper {
             val requestBuilder = Request.Builder().url(url)
             headers.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
             val response = client.newCall(requestBuilder.build()).execute()
-            val body = response.body?.string() ?: return@withContext null
-            val json = JSONObject(body)
+            response.use {
+                val body = it.body?.string() ?: return@withContext null
+                val json = JSONObject(body)
 
-            if (json.optInt("code") != 0) {
-                Logger.w(TAG, "getVideoInfo failed: code=${json.optInt("code")}")
-                return@withContext null
+                if (json.optInt("code") != 0) {
+                    Logger.w(TAG, "getVideoInfo failed: code=${json.optInt("code")}")
+                    return@withContext null
+                }
+
+                val data = json.getJSONObject("data")
+                VideoInfo(
+                    bvid = bvid,
+                    cid = data.getLong("cid"),
+                    title = data.getString("title"),
+                    duration = data.getInt("duration"),
+                    coverUrl = data.getString("pic")
+                )
             }
-
-            val data = json.getJSONObject("data")
-            VideoInfo(
-                bvid = bvid,
-                cid = data.getLong("cid"),
-                title = data.getString("title"),
-                duration = data.getInt("duration"),
-                coverUrl = data.getString("pic")
-            )
         } catch (e: Exception) {
             Logger.e(TAG, "getVideoInfo error: ${e.message}")
             null
@@ -81,43 +83,45 @@ object BilibiliAudioHelper {
             val requestBuilder = Request.Builder().url(url)
             headers.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
             val response = client.newCall(requestBuilder.build()).execute()
-            val body = response.body?.string() ?: return@withContext null
-            val json = JSONObject(body)
+            response.use {
+                val body = it.body?.string() ?: return@withContext null
+                val json = JSONObject(body)
 
-            if (json.optInt("code") != 0) {
-                Logger.w(TAG, "getAudioStreamUrl failed: code=${json.optInt("code")}")
-                return@withContext null
-            }
-
-            val dash = json.getJSONObject("data").optJSONObject("dash")
-            if (dash == null) {
-                Logger.w(TAG, "getAudioStreamUrl: no dash data")
-                return@withContext null
-            }
-
-            val audioArray = dash.optJSONArray("audio")
-            if (audioArray == null || audioArray.length() == 0) {
-                Logger.w(TAG, "getAudioStreamUrl: no audio streams")
-                return@withContext null
-            }
-
-            // 选择高质量音频（按bandwidth降序排列，取第一个）
-            var bestStream: AudioStream? = null
-            for (i in 0 until audioArray.length()) {
-                val audio = audioArray.getJSONObject(i)
-                val stream = AudioStream(
-                    url = audio.getString("baseUrl"),
-                    quality = audio.getInt("id"),
-                    codec = audio.getString("codecs"),
-                    bandwidth = audio.getInt("bandwidth")
-                )
-                if (bestStream == null || stream.bandwidth > bestStream.bandwidth) {
-                    bestStream = stream
+                if (json.optInt("code") != 0) {
+                    Logger.w(TAG, "getAudioStreamUrl failed: code=${json.optInt("code")}")
+                    return@withContext null
                 }
-            }
 
-            Logger.d(TAG, "getAudioStreamUrl: quality=${bestStream?.quality}, bandwidth=${bestStream?.bandwidth}")
-            bestStream
+                val dash = json.getJSONObject("data").optJSONObject("dash")
+                if (dash == null) {
+                    Logger.w(TAG, "getAudioStreamUrl: no dash data")
+                    return@withContext null
+                }
+
+                val audioArray = dash.optJSONArray("audio")
+                if (audioArray == null || audioArray.length() == 0) {
+                    Logger.w(TAG, "getAudioStreamUrl: no audio streams")
+                    return@withContext null
+                }
+
+                // 选择高质量音频（按bandwidth降序排列，取第一个）
+                var bestStream: AudioStream? = null
+                for (i in 0 until audioArray.length()) {
+                    val audio = audioArray.getJSONObject(i)
+                    val stream = AudioStream(
+                        url = audio.getString("baseUrl"),
+                        quality = audio.getInt("id"),
+                        codec = audio.getString("codecs"),
+                        bandwidth = audio.getInt("bandwidth")
+                    )
+                    if (bestStream == null || stream.bandwidth > bestStream.bandwidth) {
+                        bestStream = stream
+                    }
+                }
+
+                Logger.d(TAG, "getAudioStreamUrl: quality=${bestStream?.quality}, bandwidth=${bestStream?.bandwidth}")
+                bestStream
+            }
         } catch (e: Exception) {
             Logger.e(TAG, "getAudioStreamUrl error: ${e.message}")
             null

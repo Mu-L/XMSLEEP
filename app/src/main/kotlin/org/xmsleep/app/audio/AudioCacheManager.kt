@@ -175,17 +175,18 @@ class AudioCacheManager private constructor(context: Context) {
                         .build()
                     
                     val response = okHttpClient.newCall(request).execute()
-                    
-                    if (!response.isSuccessful) {
-                        throw IOException("下载失败: HTTP ${response.code}")
-                    }
-                    
-                    val body = response.body ?: throw IOException("响应体为空")
-                    
-                    // 保存到缓存
-                    body.byteStream().use { input ->
-                        file.outputStream().use { output ->
-                            input.copyTo(output)
+                    response.use {
+                        if (!it.isSuccessful) {
+                            throw IOException("下载失败: HTTP ${it.code}")
+                        }
+                        
+                        val body = it.body ?: throw IOException("响应体为空")
+                        
+                        // 保存到缓存
+                        body.byteStream().use { input ->
+                            file.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
                         }
                     }
                     
@@ -297,38 +298,39 @@ class AudioCacheManager private constructor(context: Context) {
                     .build()
                 
                 val response = okHttpClient.newCall(request).execute()
-                
-                if (!response.isSuccessful) {
-                    val httpCode = response.code
-                    val errorMsg = "下载失败: HTTP $httpCode"
-                    Logger.w(TAG, "$errorMsg (来源: $source, URL: $url)")
-                    
-                    // 对于 403/404 错误，立即失败，不重试（这些错误重试也没用）
-                    if (httpCode == 403 || httpCode == 404) {
-                        Logger.w(TAG, "HTTP $httpCode 错误，立即失败，不回退重试")
-                        throw NonRetryableException(errorMsg, httpCode)
+                response.use {
+                    if (!it.isSuccessful) {
+                        val httpCode = it.code
+                        val errorMsg = "下载失败: HTTP $httpCode"
+                        Logger.w(TAG, "$errorMsg (来源: $source, URL: $url)")
+                        
+                        // 对于 403/404 错误，立即失败，不重试（这些错误重试也没用）
+                        if (httpCode == 403 || httpCode == 404) {
+                            Logger.w(TAG, "HTTP $httpCode 错误，立即失败，不回退重试")
+                            throw NonRetryableException(errorMsg, httpCode)
+                        }
+                        
+                        throw IOException(errorMsg)
                     }
                     
-                    throw IOException(errorMsg)
-                }
-                
-                val body = response.body ?: throw IOException("响应体为空")
-                val contentLength = body.contentLength()
-                
-                // 保存到缓存
-                body.byteStream().use { input ->
-                    file.outputStream().use { output ->
-                        var totalBytesRead = 0L
-                        val buffer = ByteArray(8192)
-                        var bytesRead: Int
-                        
-                        while (input.read(buffer).also { bytesRead = it } != -1) {
-                            output.write(buffer, 0, bytesRead)
-                            totalBytesRead += bytesRead
+                    val body = it.body ?: throw IOException("响应体为空")
+                    val contentLength = body.contentLength()
+                    
+                    // 保存到缓存
+                    body.byteStream().use { input ->
+                        file.outputStream().use { output ->
+                            var totalBytesRead = 0L
+                            val buffer = ByteArray(8192)
+                            var bytesRead: Int
                             
-                            // 更新进度
-                            if (contentLength > 0) {
-                                emit(DownloadProgress.Progress(totalBytesRead, contentLength))
+                            while (input.read(buffer).also { bytesRead = it } != -1) {
+                                output.write(buffer, 0, bytesRead)
+                                totalBytesRead += bytesRead
+                                
+                                // 更新进度
+                                if (contentLength > 0) {
+                                    emit(DownloadProgress.Progress(totalBytesRead, contentLength))
+                                }
                             }
                         }
                     }

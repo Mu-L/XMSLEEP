@@ -120,8 +120,8 @@ fun MeditationPlayerScreen(
         }
 
         if (!managerIsPlaying && isCurrentSession && playerManager.hasMedia()) {
-            playerManager.resume(context)
-            return
+            if (playerManager.resume(context)) return
+            // resume失败（错误状态），继续走到完整play()路径重新获取URL
         }
 
         currentSession?.let { session ->
@@ -150,21 +150,6 @@ fun MeditationPlayerScreen(
     // 初始化管理器
     LaunchedEffect(Unit) {
         playerManager.initialize(context)
-    }
-
-    // 注册倒计时监听器：倒计时结束后停止冥想音频（修复在冥想页设倒计时时无人停止的问题）
-    DisposableEffect(Unit) {
-        val listener = object : TimerManager.TimerListener {
-            override fun onTimerTick(timeLeftMillis: Long) {}
-            override fun onTimerFinished(durationMinutes: Int) {
-                playerManager.stop()
-            }
-            override fun onTimerCancelled() {}
-        }
-        timerManager.addListener(listener)
-        onDispose {
-            timerManager.removeListener(listener)
-        }
     }
 
     // 切换音频时重置进度（总时长先用 manifest 里的真实值兜底，READY 后由播放器修正）
@@ -619,10 +604,12 @@ private fun formatTime(millis: Long): String {
 
 private fun loadMeditationManifest(context: Context): MeditationManifest? {
     return try {
-        val inputStream = context.assets.open("meditation_remote.json")
-        val reader = InputStreamReader(inputStream)
-        val type = object : TypeToken<MeditationManifest>() {}.type
-        Gson().fromJson(reader, type)
+        context.assets.open("meditation_remote.json").use { inputStream ->
+            InputStreamReader(inputStream).use { reader ->
+                val type = object : TypeToken<MeditationManifest>() {}.type
+                Gson().fromJson(reader, type)
+            }
+        }
     } catch (e: Exception) {
         null
     }

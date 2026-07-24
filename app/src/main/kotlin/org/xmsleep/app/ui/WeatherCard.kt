@@ -79,7 +79,7 @@ fun WeatherCard(
 
     val weatherCode = currentWeather.weatherCode
     val recommendedSoundIds = remember(weatherCode) {
-        WeatherSoundMapper.getRecommendedSoundIds(context, weatherCode)
+        WeatherSoundMapper.getRecommendedSoundIds(context, weatherCode, currentWeather.isDay)
     }
     val recommendedSounds = remember(recommendedSoundIds, remoteSounds) {
         remoteSounds.filter { it.id in recommendedSoundIds }

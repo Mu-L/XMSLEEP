@@ -235,66 +235,75 @@ fun StarSkySimpleContent(
         TimerDialog(
             onDismiss = { showTimerDialog = false },
             onTimerSet = { minutes ->
-                timerManager.startTimer(minutes)
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.countdown_set_minutes, minutes),
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (playingSounds.isEmpty()) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.please_play_sound_before_timer),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    timerManager.startTimer(minutes)
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.countdown_set_minutes, minutes),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 showTimerDialog = false
             },
             currentTimerMinutes = if (timerManager.isTimerActive.value) timerManager.getCurrentTimerMinutes() else 0
         )
     }
 
-    if (showVolumeDialog && selectedSoundForVolume != null) {
-        val sound = selectedSoundForVolume!!
-        AlertDialog(
-            onDismissRequest = { showVolumeDialog = false },
-            title = { Text(sound.getLocalizedName(currentLanguage)) },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        context.getString(R.string.adjust_volume),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Slider(
-                            value = volume,
-                            onValueChange = {
-                                volume = it
-                                audioManager.setRemoteVolume(sound.id, volume)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            valueRange = 0f..1f,
-                            steps = 19
+    if (showVolumeDialog) {
+        selectedSoundForVolume?.let { sound ->
+            AlertDialog(
+                onDismissRequest = { showVolumeDialog = false },
+                title = { Text(sound.getLocalizedName(currentLanguage)) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            context.getString(R.string.adjust_volume),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("0%", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("${(volume * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-                            Text("100%", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Slider(
+                                value = volume,
+                                onValueChange = {
+                                    volume = it
+                                    audioManager.setRemoteVolume(sound.id, volume)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                valueRange = 0f..1f,
+                                steps = 19
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("0%", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("${(volume * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                                Text("100%", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showVolumeDialog = false
+                        Toast.makeText(context, context.getString(R.string.volume_adjusted), Toast.LENGTH_SHORT).show()
+                    }) {
+                        Text(context.getString(R.string.ok))
+                    }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showVolumeDialog = false
-                    Toast.makeText(context, context.getString(R.string.volume_adjusted), Toast.LENGTH_SHORT).show()
-                }) {
-                    Text(context.getString(R.string.ok))
-                }
-            }
-        )
+            )
+        }
     }
 }
 

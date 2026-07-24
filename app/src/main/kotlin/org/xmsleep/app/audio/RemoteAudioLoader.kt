@@ -144,30 +144,31 @@ class RemoteAudioLoader(private val context: Context) {
                             .build()
                         
                         val response = okHttpClient.newCall(request).execute()
-                        
-                        if (!response.isSuccessful) {
-                            throw IOException("加载清单失败: HTTP ${response.code}")
-                        }
-                        
-                        val json = response.body?.string() 
-                            ?: throw IOException("响应体为空")
-                        
-                        try {
-                            val manifest = gson.fromJson(json, SoundsManifest::class.java)
-                            
-                            if (manifest.sounds.isEmpty()) {
-                                Logger.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
+                        response.use {
+                            if (!it.isSuccessful) {
+                                throw IOException("加载清单失败: HTTP ${it.code}")
                             }
                             
-                            // 一主二为：需业修复不完整的音频数据，然后转换 URL
-                            val fixedManifest = fixManifestData(manifest)
-                            val convertedManifest = convertManifestUrls(fixedManifest)
+                            val json = it.body?.string() 
+                                ?: throw IOException("响应体为空")
                             
-                            return@withContext convertedManifest
-                        } catch (jsonError: Exception) {
-                            Logger.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
-                            Logger.e(TAG, "JSON 内容预览 (前500个字符): ${json.take(500)}")
-                            throw jsonError
+                            try {
+                                val manifest = gson.fromJson(json, SoundsManifest::class.java)
+                                
+                                if (manifest.sounds.isEmpty()) {
+                                    Logger.w(TAG, "警告: 解析的 JSON 中没有音频！JSON 子串: ${json.take(200)}...")
+                                }
+                                
+                                // 一主二为：需业修复不完整的音频数据，然后转换 URL
+                                val fixedManifest = fixManifestData(manifest)
+                                val convertedManifest = convertManifestUrls(fixedManifest)
+                                
+                                return@withContext convertedManifest
+                            } catch (jsonError: Exception) {
+                                Logger.e(TAG, "JSON 解析失败: ${jsonError.javaClass.simpleName} - ${jsonError.message}")
+                                Logger.e(TAG, "JSON 内容预览 (前500个字符): ${json.take(500)}")
+                                throw jsonError
+                            }
                         }
                     } catch (e: Exception) {
                         lastException = e

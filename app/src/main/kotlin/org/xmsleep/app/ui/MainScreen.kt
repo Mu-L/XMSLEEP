@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import org.xmsleep.app.Constants
 import androidx.compose.material.icons.filled.Favorite // explicit for icon resolution
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -114,8 +115,8 @@ fun MainScreen(
     var selectedItem by remember { mutableIntStateOf(1) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val prefs = remember { context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE) }
-    var simpleMode by remember { mutableStateOf(prefs.getBoolean("simple_mode", false)) }
-    LaunchedEffect(simpleMode) { prefs.edit().putBoolean("simple_mode", simpleMode).apply() }
+    var simpleMode by remember { mutableStateOf(prefs.getBoolean(Constants.PrefsKeys.SIMPLE_MODE, false)) }
+    LaunchedEffect(simpleMode) { prefs.edit().putBoolean(Constants.PrefsKeys.SIMPLE_MODE, simpleMode).apply() }
     val isDarkTheme = isSystemInDarkTheme()
     
     // 获取 Activity - 使用 LifecycleOwner
@@ -581,7 +582,7 @@ fun MainScreen(
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
                                     shouldCollapseFloatingButton = true
-                                    CoroutineScope(Dispatchers.Main).launch {
+                                    scope.launch {
                                         delay(100) // 短暂延迟后重置
                                         shouldCollapseFloatingButton = false
                                     }
@@ -590,7 +591,7 @@ fun MainScreen(
                                     // 当快捷播放展开时，强制收缩悬浮播放按钮
                                     forceCollapseFloatingButton = true
                                     // 短暂延迟后重置强制收缩状态
-                                    CoroutineScope(Dispatchers.Main).launch {
+                                    scope.launch {
                                         delay(100)
                                         forceCollapseFloatingButton = false
                                     }
@@ -610,7 +611,7 @@ fun MainScreen(
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
                                     shouldCollapseFloatingButton = true
-                                    CoroutineScope(Dispatchers.Main).launch {
+                                    scope.launch {
                                         delay(100) // 短暂延迟后重置
                                         shouldCollapseFloatingButton = false
                                     }
@@ -677,7 +678,7 @@ fun MainScreen(
                                 onScrollDetected = {
                                     // 滚动时，触发浮动按钮收缩
                                     shouldCollapseFloatingButton = true
-                                    CoroutineScope(Dispatchers.Main).launch {
+                                    scope.launch {
                                         delay(100) // 短暂延迟后重置
                                         shouldCollapseFloatingButton = false
                                     }
@@ -728,7 +729,7 @@ fun MainScreen(
                     onScrollDetected = {
                         // 滚动时收缩悬浮按钮
                         shouldCollapseFloatingButton = true
-                        CoroutineScope(Dispatchers.Main).launch {
+                        scope.launch {
                             delay(100)
                             shouldCollapseFloatingButton = false
                         }

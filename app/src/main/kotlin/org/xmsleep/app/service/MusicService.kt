@@ -305,9 +305,6 @@ class MusicService : Service() {
         // 停止前台服务
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-        
-        // 退出应用
-        android.os.Process.killProcess(android.os.Process.myPid())
     }
     
     /**

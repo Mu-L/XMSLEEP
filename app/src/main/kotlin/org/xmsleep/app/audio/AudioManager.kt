@@ -373,7 +373,7 @@ class AudioManager private constructor() {
             localSoundPlayer.releaseAllPlayers()
             remoteSoundPlayer.releaseAllRemotePlayers()
 
-            audioFocusManager.abandonAudioFocus(applicationContext!!)
+            audioFocusManager.abandonAudioFocus(applicationContext ?: return)
             musicServiceManager.release()
 
             applicationContext = null

@@ -41,6 +41,10 @@ class MeditationPlayerManager private constructor() {
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
+    // 错误状态（CDN URL过期等导致播放器进入不可恢复状态）
+    private val _hasError = MutableStateFlow(false)
+    val hasError: StateFlow<Boolean> = _hasError.asStateFlow()
+
     private val _currentSessionId = MutableStateFlow<String?>(null)
     val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
 
@@ -55,6 +59,13 @@ class MeditationPlayerManager private constructor() {
 
     // 外部停止回调（用于互斥）
     private var onStopRequested: (() -> Unit)? = null
+
+    // 全局倒计时监听器（注册后永不移除，直到 release）
+    private val timerListener = object : org.xmsleep.app.timer.TimerManager.TimerListener {
+        override fun onTimerTick(timeLeftMillis: Long) {}
+        override fun onTimerFinished(durationMinutes: Int) { stop() }
+        override fun onTimerCancelled() {}
+    }
 
     fun setOnStopRequested(callback: () -> Unit) {
         onStopRequested = callback
@@ -90,10 +101,14 @@ class MeditationPlayerManager private constructor() {
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                         Logger.e(TAG, "播放错误: ${error.message} cause=${error.cause?.message}")
                         _isPlaying.value = false
+                        _hasError.value = true
                     }
                 })
             }
             audioManager.value = context.getSystemService(Context.AUDIO_SERVICE) as? SystemAudioManager
+
+            // 注册全局倒计时监听器：倒计时到期时停止冥想音频
+            org.xmsleep.app.timer.TimerManager.getInstance().addListener(timerListener)
         }
     }
 
@@ -106,6 +121,9 @@ class MeditationPlayerManager private constructor() {
         // 通知外部停止其他音频（互斥）
         onStopRequested?.invoke()
 
+        // 释放旧的音频焦点，避免泄漏
+        abandonAudioFocus()
+
         // 请求音频焦点
         if (!requestAudioFocus(context)) {
             Logger.w(TAG, "无法获取音频焦点")
@@ -115,6 +133,7 @@ class MeditationPlayerManager private constructor() {
         _currentCategoryId.value = categoryId
         _currentSessionId.value = sessionId
         _isPlaying.value = true
+        _hasError.value = false
 
         exoPlayer?.let { player ->
             player.repeatMode = if (_isLoop.value) Player.REPEAT_MODE_ONE else Player.REPEAT_MODE_OFF
@@ -137,13 +156,18 @@ class MeditationPlayerManager private constructor() {
     }
 
     /**
-     * 恢复播放
+     * 恢复播放。如果播放器处于错误状态（URL过期等），返回false，调用方应重新play()。
      */
-    fun resume(context: Context) {
-        if (!requestAudioFocus(context)) return
+    fun resume(context: Context): Boolean {
+        if (_hasError.value) {
+            Logger.w(TAG, "播放器处于错误状态，需要重新播放")
+            return false
+        }
+        if (!requestAudioFocus(context)) return false
         exoPlayer?.playWhenReady = true
         _isPlaying.value = true
         Logger.d(TAG, "恢复冥想播放")
+        return true
     }
 
     /**
@@ -152,6 +176,7 @@ class MeditationPlayerManager private constructor() {
     fun stop() {
         exoPlayer?.stop()
         _isPlaying.value = false
+        _hasError.value = false
         _currentSessionId.value = null
         _currentCategoryId.value = null
         _currentTime.value = 0L
@@ -203,7 +228,7 @@ class MeditationPlayerManager private constructor() {
     /**
      * 是否单曲循环
      */
-    private val _isLoop = MutableStateFlow(false)
+    private val _isLoop = MutableStateFlow(true)
     val isLoop: StateFlow<Boolean> = _isLoop.asStateFlow()
 
     fun toggleLoop() {
@@ -248,6 +273,7 @@ class MeditationPlayerManager private constructor() {
      */
     fun release() {
         stop()
+        org.xmsleep.app.timer.TimerManager.getInstance().removeListener(timerListener)
         exoPlayer?.release()
         exoPlayer = null
         instance = null

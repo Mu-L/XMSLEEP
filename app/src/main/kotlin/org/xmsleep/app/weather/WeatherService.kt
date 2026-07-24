@@ -80,9 +80,9 @@ object WeatherCodeMapper {
         }
     }
 
-    fun toWeatherType(code: Int): WeatherType {
+    fun toWeatherType(code: Int, isDay: Boolean = true): WeatherType {
         return when (code) {
-            0 -> WeatherType.SUNNY_CLEAR
+            0 -> if (isDay) WeatherType.SUNNY_CLEAR else WeatherType.SUNNY_NIGHT
             1, 2 -> WeatherType.CLOUDY_PARTLY
             3 -> WeatherType.CLOUDY_OVERCAST
             45, 48 -> WeatherType.FOGGY
@@ -169,43 +169,44 @@ class WeatherService {
                     .build()
 
                 val response = client.newCall(request).execute()
+                response.use {
+                    if (!it.isSuccessful) {
+                        return@withContext Result.failure(Exception("HTTP ${it.code}"))
+                    }
 
-                if (!response.isSuccessful) {
-                    return@withContext Result.failure(Exception("HTTP ${response.code}"))
+                    val body = it.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
+
+                    val json = JSONObject(body)
+                    val current = json.getJSONObject("current")
+
+                    val temperature = current.getDouble("temperature_2m")
+                    val weatherCode = current.getInt("weather_code")
+                    val windSpeed = current.getDouble("wind_speed_10m")
+                    val humidity = current.optInt("relative_humidity_2m", 0)
+                    val feelsLike = current.optDouble("apparent_temperature", temperature)
+                    val precipitation = current.optDouble("precipitation", 0.0)
+                    val isDay = current.optInt("is_day", 1) == 1
+                    val cloudCover = current.optInt("cloud_cover", 0)
+
+                    // 等待城市名请求完成（与天气请求并行，不额外增加延迟）
+                    val cityName = cityNameDeferred.await().getOrElse { "" }
+
+                    val weatherData = WeatherData(
+                        temperature = temperature,
+                        weatherCode = weatherCode,
+                        windSpeed = windSpeed,
+                        description = "",
+                        icon = WeatherCodeMapper.toIcon(weatherCode, isDay),
+                        cityName = cityName,
+                        humidity = humidity,
+                        feelsLike = feelsLike,
+                        precipitation = precipitation,
+                        isDay = isDay,
+                        cloudCover = cloudCover
+                    )
+
+                    Result.success(weatherData)
                 }
-
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
-
-                val json = JSONObject(body)
-                val current = json.getJSONObject("current")
-
-                val temperature = current.getDouble("temperature_2m")
-                val weatherCode = current.getInt("weather_code")
-                val windSpeed = current.getDouble("wind_speed_10m")
-                val humidity = current.optInt("relative_humidity_2m", 0)
-                val feelsLike = current.optDouble("apparent_temperature", temperature)
-                val precipitation = current.optDouble("precipitation", 0.0)
-                val isDay = current.optInt("is_day", 1) == 1
-                val cloudCover = current.optInt("cloud_cover", 0)
-
-                // 等待城市名请求完成（与天气请求并行，不额外增加延迟）
-                val cityName = cityNameDeferred.await().getOrElse { "" }
-
-                val weatherData = WeatherData(
-                    temperature = temperature,
-                    weatherCode = weatherCode,
-                    windSpeed = windSpeed,
-                    description = "",  // 不再使用 description 字段，改为在 UI 层动态生成
-                    icon = WeatherCodeMapper.toIcon(weatherCode, isDay),
-                    cityName = cityName,
-                    humidity = humidity,
-                    feelsLike = feelsLike,
-                    precipitation = precipitation,
-                    isDay = isDay,
-                    cloudCover = cloudCover
-                )
-
-                Result.success(weatherData)
             } catch (e: Exception) {
                 Result.failure(e)
             }
@@ -227,22 +228,23 @@ class WeatherService {
                     .build()
 
                 val response = client.newCall(request).execute()
+                response.use {
+                    if (!it.isSuccessful) {
+                        return@withContext Result.failure(Exception("HTTP ${it.code}"))
+                    }
 
-                if (!response.isSuccessful) {
-                    return@withContext Result.failure(Exception("HTTP ${response.code}"))
+                    val body = it.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
+                    val json = JSONObject(body)
+                    
+                    val city = json.optString("city", "")
+                    val town = json.optString("town", "")
+                    val village = json.optString("village", "")
+                    val county = json.optString("county", "")
+                    
+                    val cityName = city.ifEmpty { town.ifEmpty { village.ifEmpty { county } } }
+                    
+                    Result.success(cityName)
                 }
-
-                val body = response.body?.string() ?: return@withContext Result.failure(Exception("Empty response"))
-                val json = JSONObject(body)
-                
-                val city = json.optString("city", "")
-                val town = json.optString("town", "")
-                val village = json.optString("village", "")
-                val county = json.optString("county", "")
-                
-                val cityName = city.ifEmpty { town.ifEmpty { village.ifEmpty { county } } }
-                
-                Result.success(cityName)
             } catch (e: Exception) {
                 Result.failure(e)
             }

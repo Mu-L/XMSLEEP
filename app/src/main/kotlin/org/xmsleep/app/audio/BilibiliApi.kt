@@ -25,7 +25,7 @@ object BilibiliApi {
         .build()
 
     private var buvidLock = Mutex()
-    private var cachedCookie: String? = null
+    @Volatile private var cachedCookie: String? = null
 
     private suspend fun getCookie(): String {
         if (cachedCookie != null) return cachedCookie!!
@@ -36,7 +36,8 @@ object BilibiliApi {
                     .url("https://api.bilibili.com/x/frontend/finger/spi")
                     .header("User-Agent", USER_AGENT)
                     .build()
-                val json = JSONObject(client.newCall(request).execute().body!!.string())
+                val response = client.newCall(request).execute()
+                val json = JSONObject(response.use { it.body?.string() ?: "{}" })
                 val data = json.getJSONObject("data")
                 cachedCookie = "buvid3=${data.getString("b_3")};buvid4=${data.getString("b_4")};"
             } catch (e: Exception) {
@@ -69,7 +70,8 @@ object BilibiliApi {
     suspend fun getRoomInfo(roomId: String): RoomInfo? = withContext(Dispatchers.IO) {
         try {
             val request = req("https://api.live.bilibili.com/room/v1/Room/get_info?room_id=$roomId").build()
-            val json = JSONObject(client.newCall(request).execute().body!!.string())
+            val response = client.newCall(request).execute()
+            val json = JSONObject(response.use { it.body?.string() ?: "{}" })
             if (json.getInt("code") != 0) {
                 Logger.w(TAG, "getRoomInfo: code=${json.getInt("code")}, msg=${json.optString("msg")}")
                 return@withContext null
@@ -105,9 +107,9 @@ object BilibiliApi {
         22, 25, 54, 21, 56, 59, 6, 63, 57, 62, 11, 36, 20, 34, 44, 52
     )
 
-    private var cachedImgKey = ""
-    private var cachedSubKey = ""
-    private var cachedAccessId = ""
+    @Volatile private var cachedImgKey = ""
+    @Volatile private var cachedSubKey = ""
+    @Volatile private var cachedAccessId = ""
 
     private suspend fun getWbiKeys(): Pair<String, String> = withContext(Dispatchers.IO) {
         if (cachedImgKey.isNotEmpty() && cachedSubKey.isNotEmpty()) {
@@ -115,7 +117,8 @@ object BilibiliApi {
         }
         try {
             val request = req("https://api.bilibili.com/x/web-interface/nav").build()
-            val json = JSONObject(client.newCall(request).execute().body!!.string())
+            val response = client.newCall(request).execute()
+            val json = JSONObject(response.use { it.body?.string() ?: "{}" })
             val wbi = json.getJSONObject("data").getJSONObject("wbi_img")
             val imgUrl = wbi.getString("img_url")
             val subUrl = wbi.getString("sub_url")
@@ -129,6 +132,8 @@ object BilibiliApi {
     }
 
     private fun getMixinKey(origin: String): String {
+        val maxIndex = mixinKeyEncTab.maxOrNull() ?: 0
+        if (origin.length <= maxIndex) return origin
         val sb = StringBuilder(32)
         for (i in 0 until 32) {
             sb.append(origin[mixinKeyEncTab[i]])
@@ -179,7 +184,8 @@ object BilibiliApi {
         if (cachedAccessId.isNotEmpty()) return@withContext cachedAccessId
         try {
             val request = req("https://live.bilibili.com/lol").build()
-            val html = client.newCall(request).execute().body!!.string()
+            val response = client.newCall(request).execute()
+            val html = response.use { it.body?.string() ?: "" }
             val match = Regex("\"access_id\":\"(.*?)\"").find(html)
             cachedAccessId = match?.groupValues?.get(1)?.replace("\\", "") ?: ""
             cachedAccessId
@@ -210,7 +216,8 @@ object BilibiliApi {
 
             val request = reqUrl(httpUrlBuilder.build()).build()
 
-            val json = JSONObject(client.newCall(request).execute().body!!.string())
+            val response = client.newCall(request).execute()
+            val json = JSONObject(response.use { it.body?.string() ?: "{}" })
             if (json.getInt("code") != 0) {
                 Logger.w(TAG, "getCategoryRooms: code=${json.getInt("code")}")
                 return@withContext emptyList()
@@ -252,7 +259,8 @@ object BilibiliApi {
                 .addQueryParameter("page", page.toString())
                 .build()
             val request = reqUrl(httpUrl).build()
-            val responseStr = client.newCall(request).execute().body!!.string()
+            val response = client.newCall(request).execute()
+            val responseStr = response.use { it.body?.string() ?: "" }
             if (responseStr.trimStart().startsWith("<!DOCTYPE") || responseStr.trimStart().startsWith("<html")) {
                 Logger.w(TAG, "searchRooms: got HTML instead of JSON, trying fallback")
                 return@withContext searchRoomsFallback(keyword, page)
@@ -310,7 +318,8 @@ object BilibiliApi {
             val url = "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo" +
                     "?room_id=$roomId&protocol=0,1&format=0,2&codec=0&platform=web&qn=10000"
             val request = req(url).build()
-            val responseStr = client.newCall(request).execute().body!!.string()
+            val response = client.newCall(request).execute()
+            val responseStr = response.use { it.body?.string() ?: "" }
             val json = JSONObject(responseStr)
 
             Logger.d(TAG, "getLiveUrl full response: ${responseStr.take(1000)}")

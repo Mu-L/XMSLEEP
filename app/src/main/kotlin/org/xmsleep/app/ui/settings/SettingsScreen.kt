@@ -293,23 +293,16 @@ fun SettingsScreen(
             title = context.getString(R.string.system),
             items = listOf(
                 SettingsCategoryItem(
-                    icon = Icons.Default.Translate,
-                    title = { Text(context.getString(R.string.language)) },
+                    icon = Icons.Default.AccessTime,
+                    title = { Text(context.getString(R.string.flip_clock)) },
                     description = {
                         Text(
-                            context.getString(R.string.language_description),
+                            context.getString(R.string.flip_clock_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
-                    trailingContent = {
-                        Text(
-                            currentLanguage.displayName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    onClick = { showLanguageDialog = true }
+                    onClick = { onNavigateToFlipClock() }
                 ),
                 SettingsCategoryItem(
                     icon = Icons.Outlined.Cloud,
@@ -356,16 +349,23 @@ fun SettingsScreen(
                     onClick = { showAutoCountdownDialog = true }
                 ),
                 SettingsCategoryItem(
-                    icon = Icons.Default.AccessTime,
-                    title = { Text(context.getString(R.string.flip_clock)) },
+                    icon = Icons.Default.Translate,
+                    title = { Text(context.getString(R.string.language)) },
                     description = {
                         Text(
-                            context.getString(R.string.flip_clock_description),
+                            context.getString(R.string.language_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
-                    onClick = { onNavigateToFlipClock() }
+                    trailingContent = {
+                        Text(
+                            currentLanguage.displayName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = { showLanguageDialog = true }
                 )
             )
         )
@@ -960,11 +960,10 @@ internal fun copyToPrivateStorage(context: Context, uri: Uri): Pair<Uri?, Uri?> 
         val fileUri = android.net.Uri.fromFile(destFile)
 
         val thumbUri = if (mimeType.contains("mp4")) {
+            val retriever = android.media.MediaMetadataRetriever()
             try {
-                val retriever = android.media.MediaMetadataRetriever()
                 retriever.setDataSource(context, uri)
                 val bitmap = retriever.frameAtTime
-                retriever.release()
                 if (bitmap != null) {
                     val thumbFile = java.io.File(bgDir, "${fileName}_thumb.jpg")
                     java.io.FileOutputStream(thumbFile).use { out ->
@@ -974,6 +973,7 @@ internal fun copyToPrivateStorage(context: Context, uri: Uri): Pair<Uri?, Uri?> 
                     android.net.Uri.fromFile(thumbFile)
                 } else null
             } catch (_: Exception) { null }
+            finally { try { retriever.release() } catch (_: Exception) {} }
         } else null
 
         Pair(fileUri, thumbUri)

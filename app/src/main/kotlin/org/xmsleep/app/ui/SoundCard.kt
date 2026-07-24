@@ -317,14 +317,15 @@ internal fun AnimatedWebPImage(
     val lightColor = remember(themeHct) {
         androidx.compose.ui.graphics.Color(Hct.from(themeHct.hue, themeHct.chroma, maxOf(themeHct.tone + 20, 60.0)).toInt())
     }
-    var animatedDrawable by remember { mutableStateOf<AnimatedImageDrawable?>(null) }
+    var animatedDrawable by remember { mutableStateOf<android.graphics.drawable.Drawable?>(null) }
     LaunchedEffect(isPlaying, animatedDrawable) {
         val drawable = animatedDrawable ?: return@LaunchedEffect
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val anim = drawable as? AnimatedImageDrawable ?: return@LaunchedEffect
             if (isPlaying) {
-                if (!drawable.isRunning) drawable.start()
+                if (!anim.isRunning) anim.start()
             } else {
-                if (drawable.isRunning) drawable.stop()
+                if (anim.isRunning) anim.stop()
             }
         }
     }
