@@ -321,6 +321,12 @@ XMSLEEP 是一个专注于白噪音播放的 Android 应用，提供多种自然
 
 **⭐ 如果这个项目对你有帮助，请给个 Star！**
 
+---
+
+### 随喜
+
+<img src="wechat_donate_qr.jpg" width="200" />
+
 © 2026 XMSLEEP. All rights reserved.
 
 </div>
